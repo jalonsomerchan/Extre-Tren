@@ -75,4 +75,4 @@ jobs:
 
       - name: Deploy Pages
         if: steps.commit.outputs.changed == 'true'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

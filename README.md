@@ -27,6 +27,10 @@ Consulta [la guía del pipeline](docs/data-pipeline.md) para actualizar la copia
 
 El español se publica en `/` y el inglés en `/en/`. Las traducciones están en `src/i18n/translations/`; toda clave nueva debe existir en ambos JSON.
 
+## PWA
+
+La web incluye manifest, iconos instalables, pantalla de carga y service worker para ofrecer una experiencia instalable y una copia básica offline. Los iconos viven en `public/icons/` y el service worker se registra respetando `ASTRO_BASE`, por lo que también funciona bajo subrutas.
+
 ## GitHub Pages
 
 El despliegue de producción publica en [extretren.alon.one](https://extretren.alon.one), con `ASTRO_SITE=https://extretren.alon.one` y `ASTRO_BASE=/`. El fichero `public/CNAME` conserva el dominio personalizado en el artefacto de GitHub Pages. Para una subruta distinta, consulta `docs/github-pages.md` y ajusta `ASTRO_SITE` y `ASTRO_BASE`.

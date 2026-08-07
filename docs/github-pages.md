@@ -169,6 +169,8 @@ https://usuario.github.io/nombre-repo/sitemap-index.xml
 
 No volver a moverlo a `public/manifest.webmanifest` salvo que se resuelva bien `start_url` e iconos con `base`.
 
+La PWA mantiene sus iconos en `public/icons/` y el service worker en `public/sw.js`. `BaseLayout.astro` registra el worker partiendo de la URL del manifest, de modo que el scope se mantiene bajo `/` o bajo la subruta configurada en `ASTRO_BASE`.
+
 ## Checklist antes de tocar Pages o rutas
 
 - ¿`npm run build` seguirá generando `dist/`?

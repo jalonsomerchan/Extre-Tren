@@ -62,6 +62,11 @@ describe('project smoke checks', () => {
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
       'public/CNAME',
+      'public/sw.js',
+      'public/icons/icon-192.png',
+      'public/icons/icon-512.png',
+      'public/icons/icon-maskable-512.png',
+      'public/icons/apple-touch-icon.png',
       'src/layouts/BaseLayout.astro',
       'src/config/site.ts',
       'src/i18n/ui.ts',
@@ -173,6 +178,20 @@ describe('project smoke checks', () => {
     assert.match(pathHelpers, /getAbsoluteUrl/);
     assert.match(manifest, /start_url/);
     assert.match(robots, /sitemap-index\.xml/);
+  });
+
+  it('keeps the PWA shell available', () => {
+    const layout = readText('src/layouts/BaseLayout.astro');
+    const manifest = readText('src/pages/manifest.webmanifest.ts');
+    const serviceWorker = readText('public/sw.js');
+
+    assert.match(layout, /data-app-loader/);
+    assert.match(layout, /serviceWorker\.register/);
+    assert.match(layout, /apple-touch-icon/);
+    assert.match(manifest, /icon-192\.png/);
+    assert.match(manifest, /icon-512\.png/);
+    assert.match(manifest, /purpose: 'maskable'/);
+    assert.match(serviceWorker, /self\.addEventListener\('fetch'/);
   });
 
   it('keeps ExtreTren metadata, sections and data sources configured', () => {

@@ -7,17 +7,33 @@ export function GET() {
 
   const manifest = {
     name: siteConfig.name,
-    short_name: siteConfig.name,
+    short_name: 'ExtreTren',
     description: t('site.description'),
+    id: getBasePath(),
     start_url: getBasePath(),
+    scope: getBasePath(),
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#2563eb',
+    display_override: ['window-controls-overlay', 'standalone'],
+    orientation: 'portrait-primary',
+    background_color: '#f7f8fa',
+    theme_color: '#2457d6',
+    categories: ['travel', 'utilities'],
     icons: [
       {
-        src: withBasePath('favicon.svg'),
-        sizes: 'any',
-        type: 'image/svg+xml',
+        src: withBasePath('icons/icon-192.png'),
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: withBasePath('icons/icon-512.png'),
+        sizes: '512x512',
+        type: 'image/png',
+      },
+      {
+        src: withBasePath('icons/icon-maskable-512.png'),
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   };

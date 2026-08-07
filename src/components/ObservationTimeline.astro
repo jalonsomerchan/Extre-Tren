@@ -15,8 +15,7 @@ const timeFormatter = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB
   hour: '2-digit',
   minute: '2-digit',
   second: '2-digit',
-  timeZone: 'UTC',
-  timeZoneName: 'short',
+  timeZone: 'Europe/Madrid',
 });
 const delayLabel = (delay: number | null) => delay === null ? t('status.unknown') : `${delay} ${t('common.minutes')}`;
 const maxDelay = Math.max(...observations.map(([, delay]) => delay ?? 0), 1);

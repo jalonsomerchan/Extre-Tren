@@ -36,6 +36,10 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2457d6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script is:inline>
       (() => {
         let savedTheme = null;
@@ -50,6 +54,7 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href={withBasePath('favicon.svg')} />
     <link rel="icon" href={withBasePath('favicon.ico')} />
+    <link rel="apple-touch-icon" sizes="180x180" href={withBasePath('icons/apple-touch-icon.png')} />
     <link rel="manifest" href={withBasePath('manifest.webmanifest')} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={pageTitle} />
@@ -63,11 +68,44 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
     <meta name="twitter:image" content={imageUrl} />
   </head>
   <body>
+    <div class="app-loader" data-app-loader aria-live="polite">
+      <div class="app-loader__content">
+        <img src={withBasePath('icons/apple-touch-icon.png')} alt="" width="72" height="72" />
+        <strong>{siteConfig.name}</strong>
+        <span>{t('common.loading')}</span>
+        <div class="app-loader__bar" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+    <noscript><style>[data-app-loader] { display: none; }</style></noscript>
     <a class="skip-link" href="#main">{t('common.skipContent')}</a>
     <Header locale={locale} currentSection={currentSection} />
     <main id="main">
       <slot />
     </main>
     <Footer locale={locale} />
+    <script is:inline>
+      (() => {
+        const loader = document.querySelector('[data-app-loader]');
+        const startedAt = performance.now();
+
+        const hideLoader = () => {
+          const delay = Math.max(0, 280 - (performance.now() - startedAt));
+          window.setTimeout(() => loader?.classList.add('is-ready'), delay);
+        };
+
+        if (document.readyState === 'complete') hideLoader();
+        else window.addEventListener('load', hideLoader, { once: true });
+      })();
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          const manifestUrl = document.querySelector('link[rel="manifest"]')?.href;
+          if (!manifestUrl) return;
+
+          const serviceWorkerUrl = new URL('sw.js', new URL('./', manifestUrl));
+          navigator.serviceWorker.register(serviceWorkerUrl).catch(() => {});
+        }, { once: true });
+      }
+    </script>
   </body>
 </html>

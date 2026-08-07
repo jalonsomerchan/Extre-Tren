@@ -212,6 +212,16 @@ describe('project smoke checks', () => {
     assert.match(dataScript, /getAllAvailableDates/);
   });
 
+  it('keeps today live data able to add newly published services', () => {
+    const liveTable = readText('src/components/TodayLiveTable.astro');
+    const delays = readText('src/data/delays.ts');
+
+    assert.match(delays, /getLiveTrainCatalog/);
+    assert.match(liveTable, /trainCatalog\[trainNumber\]/);
+    assert.match(liveTable, /setInterval\(refresh, 5 \* 60 \* 1000\)/);
+    assert.match(liveTable, /parseCsv\(await response\.text\(\)\)/);
+  });
+
   it('includes GitHub workflows for CI and Pages', () => {
     const pagesWorkflow = readText('.github/workflows/pages.yml');
     const ciWorkflow = readText('.github/workflows/ci.yml');

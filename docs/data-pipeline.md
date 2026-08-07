@@ -32,4 +32,4 @@ Para días cerrados, el GTFS vigente puede no incluir el `trip_id` de la fecha p
 
 ## Datos de Hoy
 
-La página de inicio construye la URL raw de la fecha actual en horario peninsular y descarga ese CSV directamente desde GitHub. Si falla la petición o aún no hay publicaciones, muestra la última copia estática disponible.
+La página de inicio construye la URL raw de la fecha actual en horario peninsular y descarga ese CSV directamente desde GitHub. Repite la consulta cada cinco minutos mientras permanece abierta e incorpora los trenes publicados durante el día usando el último recorrido conocido de la copia estática. Si falla la petición o aún no hay publicaciones, muestra la última copia estática disponible.

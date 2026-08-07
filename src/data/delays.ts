@@ -36,6 +36,11 @@ export interface DelayDay {
   records: TrainRecord[];
 }
 
+export type LiveTrainReference = Pick<
+  TrainRecord,
+  'tripId' | 'trainNumber' | 'origin' | 'destination' | 'departure'
+>;
+
 interface DelayDataset {
   updatedAt: string | null;
   source: { gtfs: string; history: string };
@@ -56,6 +61,23 @@ export function getLatestDay() {
 
 export function getAvailableTrainNumbers() {
   return [...new Set(dataset.days.flatMap((day) => day.records.map((record) => record.trainNumber)))].sort();
+}
+
+// La fuente en directo solo aporta el identificador y la demora. El recorrido
+// se toma de la observación más reciente disponible para poder mostrar los
+// servicios que se publiquen después del último build.
+export function getLiveTrainCatalog(): Record<string, LiveTrainReference> {
+  const catalog: Record<string, LiveTrainReference> = {};
+
+  [...dataset.days].reverse().forEach((day) => {
+    [...day.records].reverse().forEach((record) => {
+      if (catalog[record.trainNumber]) return;
+      const { tripId, trainNumber, origin, destination, departure } = record;
+      catalog[trainNumber] = { tripId, trainNumber, origin, destination, departure };
+    });
+  });
+
+  return catalog;
 }
 
 export function getTrainHistory(trainNumber: string) {

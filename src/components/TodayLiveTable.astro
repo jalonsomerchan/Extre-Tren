@@ -1,6 +1,6 @@
 ---
 import TrainTable from './TrainTable.astro';
-import type { DelayDay } from '../data/delays';
+import { getLiveTrainCatalog, type DelayDay } from '../data/delays';
 import type { Locale } from '../config/site';
 import { useTranslations } from '../i18n/ui';
 import { getLocalizedPath } from '../i18n/ui';
@@ -15,6 +15,7 @@ const t = useTranslations(locale);
 const records = day?.records ?? [];
 const recordsByTrip = Object.fromEntries(records.map((record) => [record.tripId, record]));
 const recordsByTrain = Object.fromEntries(records.map((record) => [record.trainNumber, record]));
+const trainCatalog = getLiveTrainCatalog();
 const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
 ---
 
@@ -26,7 +27,7 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
   <div data-live-table><TrainTable records={records} locale={locale} /></div>
 </section>
 
-<script define:vars={{ recordsByTrip, recordsByTrain, journeyBaseUrl, locale, labels: {
+<script define:vars={{ recordsByTrip, recordsByTrain, trainCatalog, journeyBaseUrl, locale, labels: {
   refreshed: t('today.refreshed'), fallback: t('today.fallback'), noLive: t('today.noLive'),
   minutes: t('common.minutes'), train: t('table.train'), route: t('table.route'), departure: t('table.departure'), delay: t('table.delay'), updated: t('table.updated'), empty: t('table.empty'),
   onTime: t('status.onTime'), minor: t('status.minor'), major: t('status.major'), severe: t('status.severe'), unknown: t('status.unknown')
@@ -70,8 +71,8 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
     const rows = records.map((record) => {
       const delay = record.maxDelayMinutes;
       const state = getDelayState(delay);
-      const journeyUrl = `${journeyBaseUrl}${escapeHtml(record.trainNumber)}/dia/${record.date}/`;
       const historyUrl = `${journeyBaseUrl}${escapeHtml(record.trainNumber)}/`;
+      const journeyUrl = record.isLiveOnly ? historyUrl : `${historyUrl}dia/${record.date}/`;
       const departure = formatDeparture(record.departure);
       const updated = record.observedAt ? updatedFormatter.format(new Date(record.observedAt)) : '—';
       return `<tr class="is-${state}" data-sort-route="${escapeHtml(`${record.origin} ${record.destination}`)}" data-sort-departure="${departure}" data-sort-train="${escapeHtml(record.trainNumber)}" data-sort-delay="${delay ?? 'Infinity'}" data-sort-updated="${escapeHtml(record.observedAt || '')}"><td data-label="${labels.route}"><a class="journey-link" href="${journeyUrl}"><span class="journey-link__route"><span>${escapeHtml(record.origin)}</span><span aria-hidden="true">→</span><span>${escapeHtml(record.destination)}</span></span><small>${dateFormatter.format(new Date(`${record.date}T12:00:00`))}</small></a></td><td data-label="${labels.departure}"><time class="board-time">${departure}</time></td><td data-label="${labels.train}"><a class="train-link" href="${historyUrl}">${escapeHtml(record.trainNumber)}</a></td><td data-label="${labels.delay}"><strong class="delay-badge delay-badge--${state}">${formatDelay(delay, state)}</strong></td><td data-label="${labels.updated}"><time class="board-updated" datetime="${escapeHtml(record.observedAt || '')}">${escapeHtml(updated)}</time></td></tr>`;
@@ -80,26 +81,66 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
     (window.extreTrenSortTables ?? (() => {}))(tableElement);
   }
 
+  function parseCsvLine(line) {
+    const values = [];
+    let value = '';
+    let quoted = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line[index];
+      if (character === '"') {
+        if (quoted && line[index + 1] === '"') {
+          value += '"';
+          index += 1;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (character === ',' && !quoted) {
+        values.push(value.trim());
+        value = '';
+      } else {
+        value += character;
+      }
+    }
+
+    values.push(value.trim());
+    return values;
+  }
+
+  function parseCsv(text) {
+    const [header, ...lines] = text.trim().split(/\r?\n/);
+    const headers = parseCsvLine(header);
+    return lines.filter(Boolean).map((line) => {
+      const values = parseCsvLine(line);
+      return Object.fromEntries(headers.map((name, index) => [name, values[index] ?? '']));
+    });
+  }
+
+  let refreshInFlight = false;
+
   async function refresh() {
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+
     try {
       const response = await fetch(sourceUrl, { cache: 'no-store' });
       if (!response.ok) throw new Error('source unavailable');
-      const lines = (await response.text()).trim().split(/\r?\n/);
       const grouped = new Map();
-      lines.slice(1).forEach((line) => {
-        const fields = line.split(',');
-        if (fields[4] === 'CANCELED') return;
-        const tripId = fields[1];
-        const record = recordsByTrip[tripId] ?? recordsByTrain[fields[2]];
+      parseCsv(await response.text()).forEach((row) => {
+        if (row.fecha_tren !== `${dateParts.year}-${dateParts.month}-${dateParts.day}` || row.estado === 'CANCELED') return;
+        const tripId = row.trip_id;
+        const trainNumber = row.tren;
+        const staticRecord = recordsByTrip[tripId] ?? recordsByTrain[trainNumber];
+        const record = staticRecord ?? trainCatalog[trainNumber];
         if (!record) return;
-        const delay = fields[6] === '' ? null : Number(fields[6]);
-        const trainNumber = fields[2];
-        const current = grouped.get(trainNumber) ?? { ...record, tripId, date: `${dateParts.year}-${dateParts.month}-${dateParts.day}`, maxDelayMinutes: null, lastDelayMinutes: null, samples: 0, status: 'SCHEDULED' };
+        const parsedDelay = row.retraso_min === '' ? null : Number(row.retraso_min);
+        const delay = Number.isFinite(parsedDelay) ? parsedDelay : null;
+        const current = grouped.get(trainNumber) ?? { ...record, tripId, date: `${dateParts.year}-${dateParts.month}-${dateParts.day}`, maxDelayMinutes: null, lastDelayMinutes: null, samples: 0, status: 'SCHEDULED', isLiveOnly: !staticRecord };
         current.samples += 1;
         current.status = 'SCHEDULED';
         if (delay !== null) current.lastDelayMinutes = delay;
         if (delay !== null) current.maxDelayMinutes = Math.max(current.maxDelayMinutes ?? 0, delay);
-        current.observedAt = fields[0] || current.observedAt;
+        current.observedAt = row.timestamp_utc || current.observedAt;
         current.tripId = tripId;
         grouped.set(trainNumber, current);
       });
@@ -109,10 +150,13 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
       statusElement.textContent = freshRecords.length ? labels.refreshed : labels.noLive;
     } catch {
       statusElement.textContent = labels.fallback;
+    } finally {
+      refreshInFlight = false;
     }
   }
 
   refresh();
+  setInterval(refresh, 5 * 60 * 1000);
 </script>
 
 <style>

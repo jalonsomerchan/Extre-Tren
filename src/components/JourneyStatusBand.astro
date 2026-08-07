@@ -1,0 +1,71 @@
+---
+import type { Locale } from '../config/site';
+import type { DelayState } from '../data/delays';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  delay: number | null;
+  locale: Locale;
+  state: DelayState;
+}
+
+const { delay, locale, state } = Astro.props;
+const t = useTranslations(locale);
+const statusLabel = t(`status.${state}`);
+const delayLabel = delay === null
+  ? statusLabel
+  : `${delay > 0 ? '+' : ''}${delay} ${t('common.minutes')}`;
+const statusDescription = t(`journeyDay.statusDescription.${state}`);
+---
+
+<section class:list={['journey-status-band', `is-${state}`]} aria-labelledby="journey-status-title">
+  <div class="journey-status-band__value">
+    <strong>{delayLabel}</strong>
+    {delay !== null && <span>{t('journeyDay.delayLabel')}</span>}
+  </div>
+  <div class="journey-status-band__copy">
+    <strong id="journey-status-title">{t('journeyDay.delayReference')}</strong>
+    <p>{statusDescription}</p>
+  </div>
+</section>
+
+<style>
+  .journey-status-band {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--color-surface), var(--color-delay-minor) 4%);
+  }
+
+  .journey-status-band__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    color: var(--delay-color);
+  }
+
+  .journey-status-band__value strong {
+    font-size: clamp(2.2rem, 8vw, 3.2rem);
+    letter-spacing: -0.06em;
+    line-height: 0.95;
+  }
+
+  .journey-status-band__value span { font-size: 1rem; font-weight: 750; }
+  .journey-status-band__copy { padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+  .journey-status-band__copy strong { font-size: 0.95rem; }
+  .journey-status-band__copy p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: 0.9rem; }
+  .is-onTime { --delay-color: var(--color-delay-on-time); }
+  .is-minor { --delay-color: var(--color-delay-minor); }
+  .is-major { --delay-color: var(--color-delay-major); }
+  .is-severe { --delay-color: var(--color-delay-severe); }
+  .is-cancelled, .is-suspended, .is-unknown { --delay-color: var(--color-text-muted); }
+
+  @media (min-width: 640px) {
+    .journey-status-band { grid-template-columns: minmax(15rem, 0.95fr) minmax(0, 1.05fr); align-items: center; padding: var(--space-6); }
+    .journey-status-band__copy { padding-top: 0; padding-left: var(--space-6); border-top: 0; border-left: 1px solid var(--color-border); }
+  }
+</style>

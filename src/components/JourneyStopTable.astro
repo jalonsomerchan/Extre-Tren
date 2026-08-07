@@ -1,0 +1,102 @@
+---
+import type { Locale } from '../config/site';
+import { getDelayStateForMinutes, type DelayState, type RouteStop } from '../data/delays';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  delay: number | null;
+  locale: Locale;
+  state: DelayState;
+  stops: RouteStop[];
+}
+
+const { delay, locale, state, stops } = Astro.props;
+const t = useTranslations(locale);
+const formatTime = (value: string) => {
+  if (!value) return '—';
+  const [hours, minutes] = value.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
+const addDelay = (value: string, minutes: number | null) => {
+  if (!value || minutes === null) return '—';
+  const [hours, mins] = value.split(':').map(Number);
+  const total = (hours * 60) + mins + Math.max(0, minutes);
+  return `${String(Math.floor((total % 1440) / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
+const stopState = (index: number) => ['cancelled', 'suspended', 'unknown'].includes(state) ? state : index === 0 ? 'onTime' : getDelayStateForMinutes(delay);
+const delayText = (index: number) => index === 0 || delay === null ? '—' : `${delay > 0 ? '+' : ''}${delay} ${t('common.minutes')}`;
+---
+
+<section class="journey-stop-table" aria-labelledby="journey-stops-title">
+  <div class="journey-stop-table__heading">
+    <div>
+      <h2 id="journey-stops-title">{t('journeyDay.stopsAndObservations')}</h2>
+      <p>{t('journeyDay.stopsDescription')}</p>
+    </div>
+      <span>{stops.length} {t('journey.stops')}</span>
+  </div>
+
+  {stops.length ? (
+    <div class="journey-stop-table__scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{t('journeyDay.stop')}</th>
+            <th scope="col">{t('journeyDay.scheduled')}</th>
+            <th scope="col">{t('journeyDay.estimated')}</th>
+            <th scope="col">{t('journeyDay.delay')}</th>
+            <th scope="col">{t('journeyDay.status')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stops.map((stop, index) => {
+            const state = stopState(index);
+            return (
+              <tr class:list={[`is-${state}`, { 'is-endpoint': index === 0 || index === stops.length - 1 }]}>
+                <th scope="row"><span class="journey-stop-table__marker" aria-hidden="true"></span>{stop.name}{index === 0 && <small>{t('journeyDay.origin')}</small>}{index === stops.length - 1 && <small>{t('journeyDay.destination')}</small>}</th>
+                <td>{formatTime(stop.time)}</td>
+                <td>{addDelay(stop.time, index === 0 ? 0 : delay)}</td>
+                <td>{delayText(index)}</td>
+                <td><span class="journey-stop-table__status">{t(`status.${state}`)}</span></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : <p class="journey-stop-table__empty">{t('common.noData')}</p>}
+
+  <p class="journey-stop-table__note">{t('journeyDay.estimatedNote')}</p>
+</section>
+
+<style>
+  .journey-stop-table { min-width: 0; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); }
+  .journey-stop-table__heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-4); }
+  h2 { margin: 0; font-size: 1rem; letter-spacing: -0.025em; }
+  .journey-stop-table__heading p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: 0.78rem; }
+  .journey-stop-table__heading > span { color: var(--color-text-soft); font-size: 0.72rem; white-space: nowrap; }
+  .journey-stop-table__scroll { margin-top: var(--space-5); overflow-x: auto; }
+  table { width: 100%; min-width: 34rem; border-collapse: collapse; font-size: 0.78rem; }
+  thead { color: var(--color-text-soft); font-size: 0.68rem; }
+  th, td { padding: 0.65rem 0.45rem; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: middle; }
+  thead th { padding-top: 0; font-weight: 700; white-space: nowrap; }
+  tbody th { position: relative; min-width: 11rem; color: var(--color-text); font-weight: 700; }
+  tbody td { color: var(--color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  tbody th:first-child { padding-left: 1.8rem; }
+  tbody tr:not(:last-child) th::after { position: absolute; top: calc(50% + 0.45rem); bottom: calc(-50% - 0.45rem); left: 0.58rem; width: 1px; background: var(--color-border-strong); content: ''; }
+  .journey-stop-table__marker { position: absolute; top: 50%; left: 0.3rem; width: 0.62rem; height: 0.62rem; transform: translateY(-50%); border: 2px solid var(--delay-color); border-radius: var(--radius-full); background: var(--color-surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--delay-color), transparent 84%); }
+  .is-endpoint .journey-stop-table__marker { width: 0.8rem; height: 0.8rem; left: 0.2rem; }
+  tbody small { display: inline-block; margin-left: var(--space-2); color: var(--color-primary); font-size: 0.62rem; font-weight: 750; text-transform: uppercase; }
+  .journey-stop-table__status { display: inline-flex; padding: 0.22rem 0.45rem; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--delay-color), transparent 88%); color: var(--delay-color); font-size: 0.68rem; font-weight: 750; }
+  .is-onTime { --delay-color: var(--color-delay-on-time); }
+  .is-minor { --delay-color: var(--color-delay-minor); }
+  .is-major { --delay-color: var(--color-delay-major); }
+  .is-severe { --delay-color: var(--color-delay-severe); }
+  .is-unknown { --delay-color: var(--color-text-soft); }
+  .journey-stop-table__empty, .journey-stop-table__note { color: var(--color-text-muted); font-size: 0.8rem; }
+  .journey-stop-table__empty { padding-block: var(--space-8); text-align: center; }
+  .journey-stop-table__note { margin: var(--space-4) 0 0; }
+
+  @media (max-width: 799px) { table { min-width: 37rem; } }
+</style>

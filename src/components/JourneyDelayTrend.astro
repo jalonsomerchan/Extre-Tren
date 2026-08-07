@@ -1,0 +1,109 @@
+---
+import type { Locale } from '../config/site';
+import type { TrainObservation } from '../data/delays';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  observations: TrainObservation[];
+}
+
+const { locale, observations } = Astro.props;
+const t = useTranslations(locale);
+const timeFormatter = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Europe/Madrid',
+});
+const uniqueObservations = observations.filter(([observedAt], index, values) => index === 0 || observedAt !== values[index - 1]?.[0]);
+const pointCount = Math.min(8, uniqueObservations.length);
+const maxIndex = uniqueObservations.reduce((bestIndex, [, delay], index, values) => (delay ?? 0) > (values[bestIndex]?.[1] ?? 0) ? index : bestIndex, 0);
+const minIndex = uniqueObservations.reduce((bestIndex, [, delay], index, values) => (delay ?? 0) < (values[bestIndex]?.[1] ?? 0) ? index : bestIndex, 0);
+const requiredIndices = new Set([0, Math.max(0, uniqueObservations.length - 1), maxIndex, minIndex]);
+const sampledIndices = Array.from({ length: pointCount }, (_, index) => Math.round((index * Math.max(0, uniqueObservations.length - 1)) / Math.max(1, pointCount - 1)));
+sampledIndices.forEach((index) => {
+  if (requiredIndices.size < pointCount) requiredIndices.add(index);
+});
+const points = [...requiredIndices].sort((left, right) => left - right).map((index) => uniqueObservations[index]!).filter(Boolean);
+const values = uniqueObservations.map(([, delay]) => delay ?? 0);
+const maxMagnitude = Math.max(1, ...values.map((value) => Math.abs(value)));
+const latestObservation = uniqueObservations.at(-1);
+const formatDelay = (value: number | null) => value === null ? '—' : `${value > 0 ? '+' : ''}${value} ${t('common.minutes')}`;
+const chartLabel = `${t('journeyDay.trend')}. ${t('journeyDay.trendGuide')} ${points.map(([, delay]) => formatDelay(delay)).join(', ')}`;
+const chartPayload = JSON.stringify({
+  labels: points.map(([observedAt]) => timeFormatter.format(new Date(observedAt))),
+  values: points.map(([, delay]) => delay),
+  maxMagnitude,
+  minutesLabel: t('common.minutes'),
+  unknownLabel: t('status.unknown'),
+});
+---
+
+<section class="journey-trend" aria-labelledby="journey-trend-title">
+  <div class="journey-trend__heading">
+    <div>
+      <h2 id="journey-trend-title">{t('journeyDay.trend')}</h2>
+      <p>{t('journeyDay.trendDescription')}</p>
+    </div>
+    <span>{observations.length} {t('journeyDay.samples')}</span>
+  </div>
+
+  {points.length ? (
+    <>
+      <p class="journey-trend__guide" id="journey-trend-guide">
+        <span aria-hidden="true"></span>
+        {t('journeyDay.trendGuide')}
+      </p>
+
+      <div class="journey-trend__plot">
+        <canvas
+          class="journey-trend__canvas"
+          data-journey-delay-chart={chartPayload}
+          role="img"
+          aria-label={chartLabel}
+          aria-describedby="journey-trend-guide"
+          tabindex="0"
+        >{chartLabel}</canvas>
+      </div>
+
+      <div class="journey-trend__meta">
+        <span class="journey-trend__legend"><i class="is-positive" aria-hidden="true"></i>{t('journeyDay.trendAbove')}</span>
+        <span class="journey-trend__legend"><i class="is-negative" aria-hidden="true"></i>{t('journeyDay.trendBelow')}</span>
+        {latestObservation ? <span class="journey-trend__latest">{t('journeyDay.trendLatest')}: <strong>{formatDelay(latestObservation[1])}</strong></span> : null}
+      </div>
+    </>
+  ) : <p class="journey-trend__empty">{t('chart.noData')}</p>}
+
+  <p class="journey-trend__note">{t('journeyDay.trendNote')}</p>
+</section>
+
+<script src="../scripts/journey-delay-trend.ts"></script>
+
+<style>
+  .journey-trend { min-width: 0; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); }
+  .journey-trend__heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-4); }
+  h2 { margin: 0; font-size: 1rem; letter-spacing: -0.025em; }
+  .journey-trend__heading p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: 0.78rem; }
+  .journey-trend__heading > span { color: var(--color-text-soft); font-size: 0.72rem; white-space: nowrap; }
+  .journey-trend__guide { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-4) 0 0; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface-soft); color: var(--color-text-muted); font-size: 0.78rem; line-height: 1.45; }
+  .journey-trend__guide span { flex: 0 0 1.75rem; margin-top: 0.55rem; border-top: 2px solid var(--color-text-soft); }
+  .journey-trend__plot { position: relative; height: 16rem; margin-top: var(--space-4); padding: var(--space-4) 0 var(--space-2); overflow: hidden; border-block: 1px solid var(--color-border); }
+  .journey-trend__canvas { display: block; width: 100% !important; height: 100% !important; }
+  .journey-trend__canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+  .journey-trend__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin-top: var(--space-4); color: var(--color-text-muted); font-size: 0.74rem; }
+  .journey-trend__legend { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .journey-trend__legend i { display: block; width: 0.6rem; height: 0.6rem; border-radius: var(--radius-full); }
+  .journey-trend__legend i.is-positive { background: var(--color-delay-minor); }
+  .journey-trend__legend i.is-negative { background: var(--color-info); }
+  .journey-trend__latest { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .journey-trend__latest strong { color: var(--color-text); }
+  .journey-trend__empty, .journey-trend__note { color: var(--color-text-muted); font-size: 0.8rem; }
+  .journey-trend__empty { padding-block: var(--space-8); text-align: center; }
+  .journey-trend__note { margin: var(--space-4) 0 0; }
+
+  @media (max-width: 479px) {
+    .journey-trend { padding: var(--space-4); }
+    .journey-trend__plot { height: 14.5rem; }
+    .journey-trend__latest { flex-basis: 100%; margin-left: 0; }
+  }
+</style>

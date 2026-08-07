@@ -1,14 +1,12 @@
 ---
 import Button from './Button.astro';
 import Container from './Container.astro';
-import DelayDistribution from './DelayDistribution.astro';
-import JourneyStops from './JourneyStops.astro';
-import MetricCards from './MetricCards.astro';
-import ObservationTimeline from './ObservationTimeline.astro';
-import PageHero from './PageHero.astro';
-import RouteMap from './RouteMap.astro';
+import JourneyDelayTrend from './JourneyDelayTrend.astro';
+import JourneyFacts from './JourneyFacts.astro';
+import JourneyStatusBand from './JourneyStatusBand.astro';
+import JourneyStopTable from './JourneyStopTable.astro';
 import type { Locale } from '../config/site';
-import { getJourneyDay } from '../data/delays';
+import { getDelayState, getJourneyDay } from '../data/delays';
 import { getLocalizedPath, useTranslations } from '../i18n/ui';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
@@ -26,26 +24,81 @@ const formattedDate = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB
 }).format(new Date(`${date}T12:00:00`));
 const title = `${t('journeyDay.title')} ${trainNumber} · ${formattedDate}`;
 const routeStops = record?.routeStops ?? [];
-const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.longitude !== null).length >= 2;
+const startStop = routeStops.at(0);
+const endStop = routeStops.at(-1);
+const formatTime = (value: string | undefined) => {
+  if (!value) return '—';
+  const [hours, minutes] = value.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
+const estimatedArrival = (value: string | undefined, delay: number | null) => {
+  if (!value || delay === null) return '—';
+  const [hours, minutes] = value.split(':').map(Number);
+  const totalMinutes = (hours * 60) + minutes + Math.max(0, delay);
+  return `${String(Math.floor((totalMinutes % 1440) / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+};
+const delay = record?.maxDelayMinutes ?? null;
+const state = record ? getDelayState(record) : 'unknown';
+const facts = record ? [
+  { label: t('journeyDay.departure'), value: formatTime(startStop?.time || record.departure), detail: record.origin },
+  { label: t('journeyDay.currentStatus'), value: t(`status.${state}`), detail: t('journeyDay.statusDerived'), tone: state },
+  { label: t('journeyDay.arrival'), value: estimatedArrival(endStop?.time, delay), detail: record.destination },
+  { label: t('journeyDay.stopsCount'), value: String(routeStops.length), detail: t('journey.stops') },
+  { label: t('journeyDay.samples'), value: String(record.samples), detail: t('journeyDay.sampleDetail') },
+  { label: t('journeyDay.maxDelay'), value: delay === null ? '—' : `${delay > 0 ? '+' : ''}${delay} ${t('common.minutes')}`, detail: t('journeyDay.maxDelayDetail'), tone: state },
+] : [];
 ---
 
 <BaseLayout title={title} description={t('journeyDay.description')} locale={locale} currentSection="trains">
   <Container>
-    <PageHero eyebrow={t('journeyDay.eyebrow')} title={title} description={t('journeyDay.description')} />
-    {record ? (
-      <>
-        <div class="actions"><Button href={getLocalizedPath(`/viaje/${trainNumber}/`, locale)} variant="secondary">{t('journeyDay.fullHistory')}</Button></div>
-        <MetricCards records={[record]} locale={locale} />
-        <DelayDistribution records={[record]} locale={locale} />
-        {hasRouteMap && <RouteMap stops={routeStops} title={t('journey.map')} locale={locale} />}
-        {routeStops.length > 0 && <JourneyStops stops={routeStops} title={t('journey.stops')} />}
-        <ObservationTimeline observations={record.observations ?? []} locale={locale} />
-      </>
-    ) : <p class="empty">{t('common.noData')}</p>}
+    <div class="journey-detail">
+      <div class="journey-detail__toolbar">
+        <Button href={getLocalizedPath(`/viaje/${trainNumber}/`, locale)} variant="secondary">{t('journeyDay.fullHistory')}</Button>
+      </div>
+
+      {record ? (
+        <>
+          <section class="journey-detail__hero" aria-labelledby="journey-detail-title">
+            <div class="journey-detail__identity">
+              <span class="journey-detail__train">{t('table.train')} {trainNumber}</span>
+              <span>{t('journeyDay.eyebrow')}</span>
+            </div>
+            <h1 id="journey-detail-title">{record.origin} <span aria-hidden="true">→</span> {record.destination}</h1>
+            <div class="journey-detail__meta">
+              <span>{formattedDate}</span>
+              <span>{t('journeyDay.singleJourney')}</span>
+            </div>
+          </section>
+
+          <JourneyStatusBand delay={delay} locale={locale} state={state} />
+          <JourneyFacts facts={facts} label={t('journeyDay.facts')} />
+
+          <div class="journey-detail__insights">
+            <JourneyDelayTrend observations={record.observations ?? []} locale={locale} />
+          <JourneyStopTable delay={delay} locale={locale} state={state} stops={routeStops} />
+          </div>
+        </>
+      ) : <p class="journey-detail__empty">{t('common.noData')}</p>}
+    </div>
   </Container>
 </BaseLayout>
 
 <style>
-  .actions { margin-top: var(--space-5); }
-  .empty { margin-top: var(--space-6); color: var(--color-text-muted); }
+  .journey-detail { padding-bottom: var(--space-8); }
+  .journey-detail__toolbar { padding-top: var(--space-5); }
+  .journey-detail__hero { padding-block: var(--space-6) var(--space-2); }
+  .journey-detail__identity { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); color: var(--color-text-muted); font-size: 0.8rem; }
+  .journey-detail__train { display: inline-flex; min-height: 2rem; align-items: center; padding: 0.35rem 0.7rem; border-radius: var(--radius-full); background: var(--color-primary); color: var(--color-surface); font-weight: 800; letter-spacing: 0.01em; }
+  h1 { max-width: 58rem; margin: var(--space-4) 0 0; font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: -0.06em; line-height: 1.03; }
+  h1 span { color: var(--color-primary); }
+  .journey-detail__meta { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-4); color: var(--color-text-muted); font-size: 0.9rem; }
+  .journey-detail__meta span + span { position: relative; padding-left: var(--space-5); }
+  .journey-detail__meta span + span::before { position: absolute; top: 0.45rem; left: 0; width: 0.25rem; height: 0.25rem; border-radius: var(--radius-full); background: var(--color-border-strong); content: ''; }
+  .journey-detail__insights { display: grid; gap: var(--space-5); margin-top: var(--space-6); }
+  .journey-detail__empty { margin-top: var(--space-8); padding: var(--space-8); border: 1px dashed var(--color-border); border-radius: var(--radius-xl); color: var(--color-text-muted); text-align: center; }
+
+  @media (min-width: 800px) {
+    .journey-detail__hero { padding-top: var(--space-8); }
+    .journey-detail__insights { grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr); align-items: start; }
+  }
 </style>

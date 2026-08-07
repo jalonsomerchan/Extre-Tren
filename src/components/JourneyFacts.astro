@@ -1,0 +1,57 @@
+---
+interface Fact {
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: string;
+}
+
+interface Props {
+  facts: Fact[];
+  label: string;
+}
+
+const { facts, label } = Astro.props;
+---
+
+<section class="journey-facts" aria-label={label}>
+  <dl>
+    {facts.map((fact) => (
+      <div class:list={['journey-facts__item', fact.tone && `is-${fact.tone}`]}>
+        <dt>{fact.label}</dt>
+        <dd>{fact.value}</dd>
+        {fact.detail && <small>{fact.detail}</small>}
+      </div>
+    ))}
+  </dl>
+</section>
+
+<style>
+  .journey-facts { margin-top: var(--space-5); }
+  dl { display: grid; margin: 0; border-block: 1px solid var(--color-border); }
+  .journey-facts__item { min-width: 0; padding: var(--space-4) 0; }
+  .journey-facts__item + .journey-facts__item { border-top: 1px solid var(--color-border); }
+  dt { color: var(--color-text-soft); font-size: 0.75rem; font-weight: 700; }
+  dd { margin: var(--space-1) 0 0; color: var(--color-text); font-size: 1.05rem; font-weight: 800; letter-spacing: -0.03em; }
+  small { display: block; margin-top: 0.15rem; overflow: hidden; color: var(--color-text-muted); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+  .is-onTime dd { color: var(--color-delay-on-time); }
+  .is-minor dd { color: var(--color-delay-minor); }
+  .is-major dd { color: var(--color-delay-major); }
+  .is-severe dd { color: var(--color-delay-severe); }
+
+  @media (min-width: 520px) {
+    dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .journey-facts__item { padding-inline: var(--space-4); }
+    .journey-facts__item:nth-child(odd) { border-right: 1px solid var(--color-border); }
+    .journey-facts__item:nth-child(n + 3) { border-top: 1px solid var(--color-border); }
+  }
+
+  @media (min-width: 900px) {
+    dl { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .journey-facts__item { padding: var(--space-4) var(--space-3); }
+    .journey-facts__item + .journey-facts__item,
+    .journey-facts__item:nth-child(n + 3) { border-top: 0; border-right: 0; border-left: 1px solid var(--color-border); }
+    .journey-facts__item:first-child { padding-left: 0; border-left: 0; }
+    .journey-facts__item:last-child { padding-right: 0; }
+  }
+</style>

@@ -106,6 +106,28 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
           navigator.serviceWorker.register(serviceWorkerUrl).catch(() => {});
         }, { once: true });
       }
+
+      (() => {
+        const refreshInterval = 5 * 60 * 1000;
+        let hiddenAt = null;
+
+        const refreshPage = () => {
+          if (document.visibilityState === 'visible') window.location.reload();
+        };
+
+        window.setInterval(refreshPage, refreshInterval);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') {
+            hiddenAt = Date.now();
+            return;
+          }
+
+          if (hiddenAt !== null) {
+            hiddenAt = null;
+            refreshPage();
+          }
+        });
+      })();
     </script>
   </body>
 </html>

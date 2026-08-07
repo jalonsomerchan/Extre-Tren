@@ -187,6 +187,9 @@ describe('project smoke checks', () => {
 
     assert.match(layout, /data-app-loader/);
     assert.match(layout, /serviceWorker\.register/);
+    assert.match(layout, /5 \* 60 \* 1000/);
+    assert.match(layout, /visibilitychange/);
+    assert.match(layout, /location\.reload/);
     assert.match(layout, /apple-touch-icon/);
     assert.match(manifest, /icon-192\.png/);
     assert.match(manifest, /icon-512\.png/);

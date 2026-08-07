@@ -27,7 +27,7 @@
     "chart.js": "^4.5.1",
     "expressive-code": "^0.42.0",
     "leaflet": "^1.9.4",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "^4.3.3",
     "zod": "^4.4.3"
   }
 }

@@ -28,7 +28,8 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
 
 <script define:vars={{ recordsByTrip, recordsByTrain, journeyBaseUrl, locale, labels: {
   refreshed: t('today.refreshed'), fallback: t('today.fallback'), noLive: t('today.noLive'),
-  minutes: t('common.minutes'), train: t('table.train'), route: t('table.route'), departure: t('table.departure'), delay: t('table.delay'), updated: t('table.updated'), empty: t('table.empty')
+  minutes: t('common.minutes'), train: t('table.train'), route: t('table.route'), departure: t('table.departure'), delay: t('table.delay'), updated: t('table.updated'), empty: t('table.empty'),
+  onTime: t('status.onTime'), minor: t('status.minor'), major: t('status.major'), severe: t('status.severe'), unknown: t('status.unknown')
 } }}>
   const statusElement = document.querySelector('[data-live-status]');
   const tableElement = document.querySelector('[data-live-table]');
@@ -44,7 +45,7 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
   const localeCode = locale === 'es' ? 'es-ES' : 'en-GB';
   const dateFormatter = new Intl.DateTimeFormat(localeCode, { day: '2-digit', month: '2-digit', year: 'numeric' });
   const updatedFormatter = new Intl.DateTimeFormat(localeCode, {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short',
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
   });
 
   function formatDeparture(value) {
@@ -52,19 +53,28 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
     return match ? `${match[1].padStart(2, '0')}:${match[2]}` : '—';
   }
 
-  function formatDelay(value) {
-    return value === null ? '—' : `${String(value).padStart(2, '0')} ${labels.minutes}`;
+  function getDelayState(value) {
+    if (value === null) return 'unknown';
+    if (value <= 4) return 'onTime';
+    if (value <= 14) return 'minor';
+    if (value <= 29) return 'major';
+    return 'severe';
+  }
+
+  function formatDelay(value, state) {
+    return value === null ? labels.unknown : `${String(value).padStart(2, '0')} ${labels.minutes} · ${labels[state]}`;
   }
 
   function render(records) {
     if (!records.length) return;
     const rows = records.map((record) => {
       const delay = record.maxDelayMinutes;
+      const state = getDelayState(delay);
       const journeyUrl = `${journeyBaseUrl}${escapeHtml(record.trainNumber)}/dia/${record.date}/`;
       const historyUrl = `${journeyBaseUrl}${escapeHtml(record.trainNumber)}/`;
       const departure = formatDeparture(record.departure);
       const updated = record.observedAt ? updatedFormatter.format(new Date(record.observedAt)) : '—';
-      return `<tr data-sort-route="${escapeHtml(`${record.origin} ${record.destination}`)}" data-sort-departure="${departure}" data-sort-train="${escapeHtml(record.trainNumber)}" data-sort-delay="${delay ?? 'Infinity'}" data-sort-updated="${escapeHtml(record.observedAt || '')}"><td><a class="journey-link" href="${journeyUrl}"><span class="journey-link__route"><span>${escapeHtml(record.origin)}</span><span aria-hidden="true">→</span><span>${escapeHtml(record.destination)}</span></span><small>${dateFormatter.format(new Date(`${record.date}T12:00:00`))}</small></a></td><td><time class="board-time">${departure}</time></td><td><a class="train-link" href="${historyUrl}">${escapeHtml(record.trainNumber)}</a></td><td><strong class="board-delay">${formatDelay(delay)}</strong></td><td><time class="board-updated" datetime="${escapeHtml(record.observedAt || '')}">${escapeHtml(updated)}</time></td></tr>`;
+      return `<tr class="is-${state}" data-sort-route="${escapeHtml(`${record.origin} ${record.destination}`)}" data-sort-departure="${departure}" data-sort-train="${escapeHtml(record.trainNumber)}" data-sort-delay="${delay ?? 'Infinity'}" data-sort-updated="${escapeHtml(record.observedAt || '')}"><td data-label="${labels.route}"><a class="journey-link" href="${journeyUrl}"><span class="journey-link__route"><span>${escapeHtml(record.origin)}</span><span aria-hidden="true">→</span><span>${escapeHtml(record.destination)}</span></span><small>${dateFormatter.format(new Date(`${record.date}T12:00:00`))}</small></a></td><td data-label="${labels.departure}"><time class="board-time">${departure}</time></td><td data-label="${labels.train}"><a class="train-link" href="${historyUrl}">${escapeHtml(record.trainNumber)}</a></td><td data-label="${labels.delay}"><strong class="delay-badge delay-badge--${state}">${formatDelay(delay, state)}</strong></td><td data-label="${labels.updated}"><time class="board-updated" datetime="${escapeHtml(record.observedAt || '')}">${escapeHtml(updated)}</time></td></tr>`;
     }).join('');
     tableElement.innerHTML = `<div class="station-board-wrap" tabindex="0"><table class="station-board" data-sortable-table><thead><tr><th aria-sort="none"><button type="button" data-sort-key="route" data-sort-type="text">${labels.route}<span aria-hidden="true">↕</span></button></th><th aria-sort="none"><button type="button" data-sort-key="departure" data-sort-type="text">${labels.departure}<span aria-hidden="true">↕</span></button></th><th aria-sort="none"><button type="button" data-sort-key="train" data-sort-type="text">${labels.train}<span aria-hidden="true">↕</span></button></th><th aria-sort="none"><button type="button" data-sort-key="delay" data-sort-type="number">${labels.delay}<span aria-hidden="true">↕</span></button></th><th aria-sort="none"><button type="button" data-sort-key="updated" data-sort-type="text">${labels.updated}<span aria-hidden="true">↕</span></button></th></tr></thead><tbody>${rows}</tbody></table></div>`;
     (window.extreTrenSortTables ?? (() => {}))(tableElement);
@@ -106,8 +116,13 @@ const journeyBaseUrl = getLocalizedPath('/viaje/', locale);
 </script>
 
 <style>
-  .today-live { margin-top: var(--space-8); }
-  .today-live__heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-3); }
+  .today-live { margin-top: var(--space-6); }
+  .today-live__heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
   h2 { margin: 0; font-size: 1.25rem; letter-spacing: -0.03em; }
-  .today-live__status { margin: 0; color: var(--color-text-soft); font-size: 0.8rem; text-align: right; }
+  .today-live__status { margin: 0; padding: 0.3rem 0.55rem; border-radius: var(--radius-full); background: var(--color-surface-soft); color: var(--color-text-soft); font-size: 0.68rem; text-align: right; }
+
+  @media (max-width: 479px) {
+    .today-live__heading { align-items: flex-start; flex-direction: column; }
+    .today-live__status { text-align: left; }
+  }
 </style>

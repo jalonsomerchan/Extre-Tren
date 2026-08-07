@@ -1,6 +1,7 @@
 import delayData from './renfe-extremadura.json';
 
 export type TrainStatus = 'SCHEDULED' | 'CANCELED' | 'SUSPENDED';
+export type DelayState = 'onTime' | 'minor' | 'major' | 'severe' | 'cancelled' | 'suspended' | 'unknown';
 
 export interface RouteStop {
   name: string;
@@ -78,7 +79,7 @@ export function getAvailableJourneyDays() {
 }
 
 export function getRecentDays(count: number) {
-  return getAvailableDays().slice(0, count).reverse();
+  return getAvailableDays().slice(-count);
 }
 
 export function getMonthKey(date: string) {
@@ -119,14 +120,18 @@ export function getCurrentMonthDays() {
   return getDaysForMonth(latestMonth);
 }
 
-export function getDelayState(record: TrainRecord) {
+export function getDelayStateForMinutes(delay: number | null): Exclude<DelayState, 'cancelled' | 'suspended'> {
+  if (delay === null) return 'unknown';
+  if (delay <= 4) return 'onTime';
+  if (delay <= 14) return 'minor';
+  if (delay <= 29) return 'major';
+  return 'severe';
+}
+
+export function getDelayState(record: TrainRecord): DelayState {
   if (record.status === 'SUSPENDED') return 'suspended';
   if (record.status === 'CANCELED') return 'cancelled';
-  if (record.maxDelayMinutes === null) return 'unknown';
-  if (record.maxDelayMinutes <= 5) return 'onTime';
-  if (record.maxDelayMinutes <= 15) return 'minor';
-  if (record.maxDelayMinutes <= 30) return 'major';
-  return 'severe';
+  return getDelayStateForMinutes(record.maxDelayMinutes);
 }
 
 export function getDisplayedDelay(record: TrainRecord) {
@@ -139,7 +144,7 @@ export function getDaySummary(records: TrainRecord[]) {
     .map((record) => record.maxDelayMinutes)
     .filter((delay): delay is number => delay !== null);
   const cancelled = records.filter((record) => record.status !== 'SCHEDULED').length;
-  const punctual = active.filter((record) => (record.maxDelayMinutes ?? Infinity) <= 5).length;
+  const punctual = active.filter((record) => (record.maxDelayMinutes ?? Infinity) <= 4).length;
 
   return {
     services: records.length,

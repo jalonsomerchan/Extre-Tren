@@ -35,7 +35,15 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
 <html lang={locale}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      (() => {
+        let savedTheme = null;
+        try { savedTheme = localStorage.getItem('extretren-theme'); } catch {}
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = savedTheme ?? (prefersDark ? 'dark' : 'light');
+      })();
+    </script>
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />

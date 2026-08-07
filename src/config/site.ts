@@ -10,8 +10,8 @@ export const localeLabels: Record<Locale, string> = {
 
 export const siteConfig = {
   name: 'ExtreTren',
-  description: 'Demoras, cancelaciones y estadísticas de los trenes que circulan por Extremadura.',
-  url: import.meta.env.ASTRO_SITE ?? 'https://jalonsomerchan.github.io',
+  description: 'Demoras, puntualidad y cancelaciones de los trenes de Extremadura.',
+  url: import.meta.env.ASTRO_SITE ?? 'https://extretren.alon.one',
   base: import.meta.env.ASTRO_BASE ?? '/',
   repositoryUrl: import.meta.env.PUBLIC_REPOSITORY_URL ?? 'https://github.com/jorgealonso/Extre-Tren',
   author: 'Jorge Alonso',

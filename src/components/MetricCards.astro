@@ -1,6 +1,6 @@
 ---
 import type { TrainRecord } from '../data/delays';
-import { getDaySummary } from '../data/delays';
+import { getDaySummary, getDelayStateForMinutes } from '../data/delays';
 import type { Locale } from '../config/site';
 import { useTranslations } from '../i18n/ui';
 
@@ -13,9 +13,15 @@ const { records, locale } = Astro.props;
 const t = useTranslations(locale);
 const summary = getDaySummary(records);
 const minute = (value: number | null) => (value === null ? '—' : `${value} ${t('common.minutes')}`);
+const averageState = getDelayStateForMinutes(summary.average);
+const worstState = getDelayStateForMinutes(summary.worst);
 ---
 
 <dl class="metrics" aria-label={t('statistics.title')}>
+  <div class:list={['metrics__featured', `is-${averageState}`]}>
+    <dt>{t('metrics.average')}</dt>
+    <dd>{minute(summary.average)}</dd>
+  </div>
   <div>
     <dt>{t('metrics.services')}</dt>
     <dd>{summary.services}</dd>
@@ -23,12 +29,9 @@ const minute = (value: number | null) => (value === null ? '—' : `${value} ${t
   <div>
     <dt>{t('metrics.punctual')}</dt>
     <dd>{summary.punctual}</dd>
+    <small>{t('metrics.punctualDetail')}</small>
   </div>
-  <div>
-    <dt>{t('metrics.average')}</dt>
-    <dd>{minute(summary.average)}</dd>
-  </div>
-  <div>
+  <div class={`is-${worstState}`}>
     <dt>{t('metrics.worst')}</dt>
     <dd>{minute(summary.worst)}</dd>
   </div>
@@ -41,46 +44,50 @@ const minute = (value: number | null) => (value === null ? '—' : `${value} ${t
 <style>
   .metrics {
     display: grid;
-    gap: var(--space-3);
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: var(--space-6) 0;
+    margin: var(--space-4) 0 var(--space-6);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
   }
 
   .metrics div {
     min-width: 0;
-    padding: var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-xs);
+    padding: var(--space-4) var(--space-3);
+    border-top: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
   }
 
-  .metrics div:last-child {
-    grid-column: span 2;
-  }
+  .metrics div:nth-child(-n + 2) { border-top: 0; }
+  .metrics div:nth-child(even), .metrics div:last-child { border-right: 0; }
+  .metrics div:last-child { grid-column: 1 / -1; }
+  .metrics__featured dd, .metrics .is-onTime dd { color: var(--color-delay-on-time); }
+  .metrics .is-minor dd { color: var(--color-delay-minor); }
+  .metrics .is-major dd { color: var(--color-delay-major); }
+  .metrics .is-severe dd { color: var(--color-delay-severe); }
 
   dt {
     color: var(--color-text-soft);
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   dd {
-    margin: var(--space-2) 0 0;
-    font-size: 1.65rem;
+    margin: var(--space-1) 0 0;
+    font-size: clamp(1.2rem, 6vw, 1.65rem);
     font-weight: 800;
     letter-spacing: -0.04em;
   }
 
-  @media (min-width: 640px) {
-    .metrics {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
+  small { display: block; margin-top: var(--space-1); color: var(--color-text-soft); font-size: 0.65rem; }
 
-    .metrics div:last-child {
-      grid-column: auto;
-    }
+  @media (min-width: 720px) {
+    .metrics { grid-template-columns: 1.35fr repeat(4, minmax(0, 1fr)); }
+    .metrics div, .metrics div:nth-child(-n + 2), .metrics div:last-child { grid-column: auto; border-top: 0; border-right: 1px solid var(--color-border); padding: var(--space-5); }
+    .metrics div:last-child { border-right: 0; }
+    .metrics__featured dd { font-size: clamp(1.7rem, 3vw, 2.35rem); }
   }
 </style>

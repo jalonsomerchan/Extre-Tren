@@ -1,10 +1,11 @@
 ---
 import Container from './Container.astro';
+import DelayDistribution from './DelayDistribution.astro';
+import DelayTrendChart from './DelayTrendChart.astro';
 import MetricCards from './MetricCards.astro';
 import PageHero from './PageHero.astro';
 import JourneyStops from './JourneyStops.astro';
 import RouteMap from './RouteMap.astro';
-import SummaryBars from './SummaryBars.astro';
 import TrainTable from './TrainTable.astro';
 import type { Locale } from '../config/site';
 import { getDisplayedDelay, getTrainHistory } from '../data/delays';
@@ -29,7 +30,7 @@ const items = records.map((record) => {
     href: getLocalizedPath(`/viaje/${trainNumber}/dia/${record.date}/`, locale),
   };
 });
-const title = `${t('journey.title')} ${trainNumber}`;
+const title = `${t('journey.title')} ${trainNumber}: ${t('journey.titleSuffix')}`;
 const routeStops = records.at(-1)?.routeStops ?? [];
 const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.longitude !== null).length >= 2;
 ---
@@ -38,7 +39,10 @@ const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.l
   <Container>
     <PageHero eyebrow={t('journey.eyebrow')} title={title} description={t('journey.description')} />
     <MetricCards records={records} locale={locale} />
-    <SummaryBars title={t('journey.chart')} items={items} />
+    <div class="journey-insights">
+      <DelayDistribution records={records} locale={locale} />
+      <DelayTrendChart title={t('journey.chart')} items={items} locale={locale} />
+    </div>
     {hasRouteMap && <RouteMap stops={routeStops} title={t('journey.map')} locale={locale} />}
     {routeStops.length > 0 && <JourneyStops stops={routeStops} title={t('journey.stops')} />}
     <div class="journey-table"><TrainTable records={records} locale={locale} /></div>
@@ -46,5 +50,7 @@ const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.l
 </BaseLayout>
 
 <style>
+  .journey-insights { display: grid; gap: var(--space-5); }
   .journey-table { margin-top: var(--space-6); }
+  @media (min-width: 800px) { .journey-insights { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); } }
 </style>

@@ -18,11 +18,11 @@ const label = state === 'onTime' ? t('status.onTime') : state === 'unknown' ? t(
 ---
 
 <span class:list={['delay-badge', `delay-badge--${state}`]} title={label}>
-  {state === 'cancelled' || state === 'unknown' || state === 'onTime' ? label : `${delay} · ${label}`}
+  {state === 'cancelled' || state === 'suspended' || state === 'unknown' ? label : `${delay} · ${label}`}
 </span>
 
 <style>
-  .delay-badge {
+  :global(.delay-badge) {
     display: inline-flex;
     align-items: center;
     min-height: 1.9rem;
@@ -34,10 +34,11 @@ const label = state === 'onTime' ? t('status.onTime') : state === 'unknown' ? t(
     white-space: nowrap;
   }
 
-  .delay-badge--onTime { background: var(--color-success-soft); color: var(--color-success); }
-  .delay-badge--minor { background: var(--color-warning-soft); color: var(--color-warning); }
-  .delay-badge--major, .delay-badge--severe { background: var(--color-danger-soft); color: var(--color-danger); }
-  .delay-badge--suspended { background: var(--color-warning-soft); color: var(--color-warning); }
-  .delay-badge--cancelled { background: var(--color-text); color: var(--color-surface); }
-  .delay-badge--unknown { background: var(--color-surface-soft); color: var(--color-text-muted); }
+  :global(.delay-badge--onTime) { background: color-mix(in srgb, var(--color-delay-on-time), transparent 88%); color: var(--color-delay-on-time); }
+  :global(.delay-badge--minor) { background: color-mix(in srgb, var(--color-delay-minor), transparent 86%); color: var(--color-delay-minor); }
+  :global(.delay-badge--major) { background: color-mix(in srgb, var(--color-delay-major), transparent 86%); color: var(--color-delay-major); }
+  :global(.delay-badge--severe) { background: color-mix(in srgb, var(--color-delay-severe), transparent 84%); color: var(--color-delay-severe); }
+  :global(.delay-badge--suspended) { background: var(--color-warning-soft); color: var(--color-warning); }
+  :global(.delay-badge--cancelled) { background: var(--color-text); color: var(--color-surface); }
+  :global(.delay-badge--unknown) { background: var(--color-surface-soft); color: var(--color-text-muted); }
 </style>

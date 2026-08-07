@@ -61,6 +61,7 @@ describe('project smoke checks', () => {
       'src/pages/404.astro',
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
+      'public/CNAME',
       'src/layouts/BaseLayout.astro',
       'src/config/site.ts',
       'src/i18n/ui.ts',
@@ -94,7 +95,7 @@ describe('project smoke checks', () => {
   });
 
   it('keeps basic template components available', () => {
-    ['Container', 'DataPage', 'DayDetailPage', 'DelayBadge', 'Footer', 'Header', 'JourneyDayHistoryPage', 'JourneyHistoryPage', 'JourneyStops', 'MetricCards', 'ObservationTimeline', 'PageHero', 'PeriodPicker', 'RouteMap', 'SummaryBars', 'TodayLiveTable', 'TrainTable'].forEach((component) => {
+    ['Container', 'DataPage', 'DayDetailPage', 'DelayBadge', 'DelayDistribution', 'DelayLegend', 'DelayTrendChart', 'Footer', 'Header', 'JourneyDayHistoryPage', 'JourneyHistoryPage', 'JourneyStops', 'MetricCards', 'ObservationTimeline', 'PageHero', 'PeriodPicker', 'RouteMap', 'SummaryBars', 'TodayLiveTable', 'TrainTable'].forEach((component) => {
       assert.equal(
         existsSync(join(root, `src/components/${component}.astro`)),
         true,
@@ -193,14 +194,20 @@ describe('project smoke checks', () => {
     const pagesWorkflow = readText('.github/workflows/pages.yml');
     const ciWorkflow = readText('.github/workflows/ci.yml');
     const dataWorkflow = readText('.github/workflows/data-refresh.yml');
+    const astroConfig = readText('astro.config.mjs');
 
     assert.match(pagesWorkflow, /actions\/deploy-pages@v4/);
+    assert.match(astroConfig, /https:\/\/extretren\.alon\.one/);
+    assert.match(pagesWorkflow, /ASTRO_SITE:\s*https:\/\/extretren\.alon\.one/);
+    assert.match(pagesWorkflow, /ASTRO_BASE:\s*\//);
     assert.match(pagesWorkflow, /npm run build/);
     assert.match(pagesWorkflow, /npm test/);
     assert.match(ciWorkflow, /pull_request/);
     assert.match(ciWorkflow, /npm run build/);
     assert.match(ciWorkflow, /npm test/);
     assert.match(dataWorkflow, /schedule/);
+    assert.match(dataWorkflow, /ASTRO_SITE:\s*https:\/\/extretren\.alon\.one/);
+    assert.match(dataWorkflow, /ASTRO_BASE:\s*\//);
     assert.match(dataWorkflow, /update-extremadura-data/);
     assert.match(dataWorkflow, /actions\/deploy-pages@v4/);
   });

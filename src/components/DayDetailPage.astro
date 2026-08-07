@@ -1,5 +1,6 @@
 ---
 import Container from './Container.astro';
+import DelayDistribution from './DelayDistribution.astro';
 import MetricCards from './MetricCards.astro';
 import PageHero from './PageHero.astro';
 import TrainTable from './TrainTable.astro';
@@ -17,7 +18,7 @@ const { date, locale } = Astro.props;
 const t = useTranslations(locale);
 const day = getAvailableDays().find((availableDay) => availableDay.date === date);
 const localeCode = locale === 'es' ? 'es-ES' : 'en-GB';
-const formattedDate = new Intl.DateTimeFormat(localeCode, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const formattedDate = new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'long', year: 'numeric' })
   .format(new Date(`${date}T12:00:00`));
 const records = day?.records ?? [];
 ---
@@ -26,6 +27,11 @@ const records = day?.records ?? [];
   <Container>
     <PageHero eyebrow={t('day.eyebrow')} title={`${t('day.title')} ${formattedDate}`} description={t('day.description')} />
     <MetricCards records={records} locale={locale} />
+    <div class="day-distribution"><DelayDistribution records={records} locale={locale} /></div>
     <TrainTable records={records} locale={locale} />
   </Container>
 </BaseLayout>
+
+<style>
+  .day-distribution { margin-bottom: var(--space-6); }
+</style>

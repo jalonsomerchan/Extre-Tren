@@ -15,6 +15,10 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  ASTRO_SITE: https://extretren.alon.one
+  ASTRO_BASE: /
+
 jobs:
   refresh:
     name: Import previous day

@@ -1,5 +1,7 @@
 ---
 import Container from './Container.astro';
+import DelayDistribution from './DelayDistribution.astro';
+import DelayTrendChart from './DelayTrendChart.astro';
 import MetricCards from './MetricCards.astro';
 import PageHero from './PageHero.astro';
 import PeriodPicker from './PeriodPicker.astro';
@@ -45,7 +47,8 @@ const periodOptions = section === 'week'
   : section === 'month'
     ? availableMonths.map((month) => ({ label: formatMonth(month), href: getLocalizedPath(`/mes/${month}/`, locale), selected: month === selectedMonth }))
     : [];
-const dailyBars = selectedDays.map((day) => {
+const chartDays = section === 'today' ? getRecentDays(7) : section === 'statistics' ? getRecentDays(14) : selectedDays;
+const dailyBars = chartDays.map((day) => {
   const summary = getDaySummary(day.records);
   return {
     label: dayLabel(day.date),
@@ -80,10 +83,12 @@ const details = [
         {section === 'week' && <PeriodPicker label={t('period.selectWeek')} options={periodOptions} />}
         {section === 'month' && <PeriodPicker label={t('period.selectMonth')} options={periodOptions} />}
         <MetricCards records={records} locale={locale} />
+        <div class="insights-grid">
+          <DelayDistribution records={records} locale={locale} />
+          <DelayTrendChart title={t('chart.daily')} items={dailyBars} locale={locale} />
+        </div>
         {section === 'today' && <TodayLiveTable day={latestDay} locale={locale} />}
-        {section === 'week' && <SummaryBars title={t('chart.daily')} items={dailyBars} />}
-        {section === 'month' && <SummaryBars title={t('chart.daily')} items={dailyBars} />}
-        {section === 'statistics' && <div class="analysis-grid"><SummaryBars title={t('chart.route')} items={routeBars} /><SummaryBars title={t('chart.daily')} items={dailyBars} /></div>}
+        {section === 'statistics' && <div class="analysis-grid"><SummaryBars title={t('chart.route')} items={routeBars} /></div>}
         {section === 'stations' && <SummaryBars title={t('chart.station')} items={stationBars} />}
         {section === 'trains' && <TrainTable records={sortedRecords} locale={locale} />}
       </>
@@ -94,9 +99,10 @@ const details = [
 <style>
   .empty-state { padding: var(--space-8); border: 1px dashed var(--color-border); border-radius: var(--radius-xl); color: var(--color-text-muted); text-align: center; }
   .analysis-grid { display: grid; gap: var(--space-5); }
+  .insights-grid { display: grid; gap: var(--space-5); margin-bottom: var(--space-6); }
   .methodology-grid { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
-  .methodology-grid article { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+  .methodology-grid article { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); }
   .methodology-grid h2 { margin: 0; font-size: 1.1rem; letter-spacing: -0.025em; }
   .methodology-grid p { margin: var(--space-3) 0 0; color: var(--color-text-muted); line-height: 1.65; }
-  @media (min-width: 800px) { .analysis-grid, .methodology-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 800px) { .insights-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); } .methodology-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

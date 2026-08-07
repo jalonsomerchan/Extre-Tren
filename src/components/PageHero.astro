@@ -16,30 +16,37 @@ const { eyebrow, title, description } = Astro.props;
 
 <style>
   .page-hero {
-    max-width: 48rem;
-    padding-block: var(--space-10) var(--space-6);
+    width: 100%;
+    padding-block: var(--space-8) var(--space-3);
   }
 
   .page-hero > p:first-child {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--space-2);
     color: var(--color-primary);
-    font-size: 0.75rem;
+    font-size: 0.66rem;
     font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
   h1 {
+    width: 100%;
     margin: 0;
-    font-size: clamp(2.25rem, 8vw, 4.5rem);
-    letter-spacing: -0.055em;
-    line-height: 0.98;
+    max-width: none;
+    font-size: clamp(1.9rem, 5vw, 2.4rem);
+    letter-spacing: -0.045em;
+    line-height: 1.04;
   }
 
   .page-hero__description {
-    margin: var(--space-5) 0 0;
+    max-width: 62ch;
+    margin: var(--space-3) 0 0;
     color: var(--color-text-muted);
-    font-size: 1.08rem;
-    line-height: 1.65;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 768px) {
+    .page-hero { padding-block: var(--space-8) var(--space-4); }
   }
 </style>

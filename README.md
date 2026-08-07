@@ -29,4 +29,4 @@ El español se publica en `/` y el inglés en `/en/`. Las traducciones están en
 
 ## GitHub Pages
 
-La configuración calcula la base de Astro automáticamente. Para un dominio propio o una subruta distinta, consulta `docs/github-pages.md` y ajusta `ASTRO_SITE` y `ASTRO_BASE`.
+El despliegue de producción publica en [extretren.alon.one](https://extretren.alon.one), con `ASTRO_SITE=https://extretren.alon.one` y `ASTRO_BASE=/`. El fichero `public/CNAME` conserva el dominio personalizado en el artefacto de GitHub Pages. Para una subruta distinta, consulta `docs/github-pages.md` y ajusta `ASTRO_SITE` y `ASTRO_BASE`.

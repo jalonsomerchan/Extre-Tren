@@ -17,19 +17,10 @@ const alternateLocales = getAlternateLocales(locale);
 <header class="site-header">
   <Container class="site-header__bar">
     <a class="site-brand" href={getLocalizedPath('/', locale)} aria-label={siteConfig.name}>
-      <span aria-hidden="true">↠</span>{siteConfig.name}
+      <strong>{siteConfig.name}</strong>
+      <span>{t('site.tagline')}</span>
     </a>
-    <div class="site-header__tools">
-      <button class="theme-toggle" type="button" data-theme-toggle data-dark-label={t('theme.toggle')} data-light-label={t('theme.toggleLight')} aria-label={t('theme.toggle')} title={t('theme.toggle')}>◐</button>
-      {alternateLocales.map((alternateLocale) => (
-        <a class="language-link" href={getLocalizedPath(currentSection ? sections.find((section) => section.id === currentSection)?.path ?? '/' : '/', alternateLocale)} hreflang={alternateLocale}>
-          {localeLabels[alternateLocale].slice(0, 2).toUpperCase()}
-        </a>
-      ))}
-    </div>
-  </Container>
-  <Container class="site-nav-wrap">
-    <nav class="site-nav" aria-label={t('nav.main')}>
+    <nav class="site-nav site-nav--desktop" aria-label={t('nav.main')}>
       {sections.map((section) => (
         <a
           class:list={{ 'is-current': section.id === currentSection }}
@@ -38,6 +29,26 @@ const alternateLocales = getAlternateLocales(locale);
         >{t(section.label)}</a>
       ))}
     </nav>
+    <div class="site-header__tools">
+      <button class="theme-toggle" type="button" data-theme-toggle data-dark-label={t('theme.toggle')} data-light-label={t('theme.toggleLight')} aria-label={t('theme.toggle')} title={t('theme.toggle')}>{t('theme.label')}</button>
+      {alternateLocales.map((alternateLocale) => (
+        <a class="language-link" href={getLocalizedPath(currentSection ? sections.find((section) => section.id === currentSection)?.path ?? '/' : '/', alternateLocale)} hreflang={alternateLocale}>
+          {localeLabels[alternateLocale].slice(0, 2).toUpperCase()}
+        </a>
+      ))}
+      <details class="mobile-menu">
+        <summary>{t('nav.menu')}</summary>
+        <nav aria-label={t('nav.main')}>
+          {sections.map((section) => (
+            <a
+              class:list={{ 'is-current': section.id === currentSection }}
+              href={getLocalizedPath(section.path, locale)}
+              aria-current={section.id === currentSection ? 'page' : undefined}
+            >{t(section.label)}</a>
+          ))}
+        </nav>
+      </details>
+    </div>
   </Container>
 </header>
 
@@ -66,16 +77,32 @@ const alternateLocales = getAlternateLocales(locale);
 </script>
 
 <style>
-  .site-header { position: sticky; top: 0; z-index: var(--z-header); border-bottom: 1px solid color-mix(in srgb, var(--color-border), transparent 20%); background: color-mix(in srgb, var(--color-bg), transparent 8%); backdrop-filter: blur(16px); }
-  .site-header__bar { display: flex; min-height: 3.8rem; align-items: center; gap: var(--space-3); }
-  .site-brand { display: inline-flex; align-items: center; gap: 0.35rem; margin-right: auto; color: var(--color-text); font-size: 1.1rem; font-weight: 850; letter-spacing: -0.05em; text-decoration: none; }
-  .site-brand span { color: var(--color-primary); font-size: 1.5rem; }
+  .site-header { position: sticky; top: 0; z-index: var(--z-header); border-bottom: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-bg), transparent 6%); backdrop-filter: blur(14px); }
+  :global(.site-header__bar) { position: relative; display: flex; min-height: 3.7rem; align-items: center; gap: var(--space-3); }
+  .site-brand { display: grid; margin-right: auto; color: var(--color-text); text-decoration: none; }
+  .site-brand strong { font-size: 1.08rem; font-weight: 850; letter-spacing: -0.045em; line-height: 1; }
+  .site-brand span { display: none; color: var(--color-primary); font-size: 0.66rem; font-weight: 720; line-height: 1.2; }
   .site-header__tools { display: flex; align-items: center; gap: var(--space-2); }
-  .theme-toggle, .language-link { display: grid; width: 2.35rem; height: 2.35rem; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 0.75rem; font-weight: 800; text-decoration: none; cursor: pointer; }
+  .theme-toggle, .language-link, .mobile-menu summary { display: grid; min-width: 2.5rem; min-height: 2.5rem; padding: 0.5rem 0.65rem; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 0.7rem; font-weight: 800; text-decoration: none; cursor: pointer; }
   .theme-toggle:hover, .language-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
-  .site-nav-wrap { overflow: hidden; border-top: 1px solid color-mix(in srgb, var(--color-border), transparent 35%); }
-  .site-nav { display: flex; gap: var(--space-2); width: max-content; max-width: 100%; overflow-x: auto; padding-block: var(--space-2); scrollbar-width: none; }
-  .site-nav::-webkit-scrollbar { display: none; }
-  .site-nav a { flex: 0 0 auto; padding: 0.45rem 0.65rem; border-radius: var(--radius-full); color: var(--color-text-muted); font-size: 0.82rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
-  .site-nav a:hover, .site-nav a.is-current { background: var(--color-primary-soft); color: var(--color-primary); }
+  .site-nav--desktop { display: none; }
+  .site-nav a { color: var(--color-text-muted); font-size: 0.82rem; font-weight: 700; text-decoration: none; }
+  .site-nav a:hover, .site-nav a.is-current { color: var(--color-primary); }
+  .mobile-menu { position: relative; }
+  .mobile-menu summary { list-style: none; }
+  .mobile-menu summary::-webkit-details-marker { display: none; }
+  .mobile-menu[open] summary { border-color: var(--color-primary); color: var(--color-primary); }
+  .mobile-menu nav { position: absolute; top: calc(100% + 0.6rem); right: 0; display: grid; width: min(18rem, calc(100vw - 2rem)); padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-md); }
+  .mobile-menu a { padding: 0.7rem 0.8rem; border-radius: var(--radius-md); color: var(--color-text-muted); font-size: 0.9rem; font-weight: 700; text-decoration: none; }
+  .mobile-menu a:hover, .mobile-menu a.is-current { background: var(--color-primary-soft); color: var(--color-primary); }
+
+  @media (min-width: 960px) {
+    :global(.site-header__bar) { min-height: 4rem; }
+    .site-brand { margin-right: var(--space-5); }
+    .site-brand span { display: block; }
+    .site-nav--desktop { display: flex; align-items: center; gap: var(--space-5); margin-right: auto; }
+    .site-nav--desktop a { position: relative; padding-block: 1.35rem; white-space: nowrap; }
+    .site-nav--desktop a.is-current::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; border-radius: var(--radius-full); background: var(--color-primary); content: ''; }
+    .mobile-menu { display: none; }
+  }
 </style>

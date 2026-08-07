@@ -16,19 +16,17 @@ src/layouts/BaseLayout.astro
 
 ## Configuración de Astro
 
-`astro.config.mjs` calcula automáticamente:
+`astro.config.mjs` usa por defecto el dominio personalizado de producción y permite sobreescribirlo para otros hostings:
 
 ```js
-const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? 'astro-template';
-const site = process.env.ASTRO_SITE ?? `https://${process.env.GITHUB_REPOSITORY_OWNER ?? 'jalonsomerchan'}.github.io`;
-const base = process.env.ASTRO_BASE ?? (process.env.GITHUB_ACTIONS ? `/${repositoryName}` : '/');
+const site = process.env.ASTRO_SITE ?? 'https://extretren.alon.one';
+const base = process.env.ASTRO_BASE ?? '/';
 ```
 
 Esto permite:
 
-- Desarrollo local en `/`.
-- Dominio propio en `/` con `ASTRO_BASE=/`.
-- GitHub Pages o subcarpetas en `/nombre-repo/`.
+- Desarrollo local y producción en dominio propio bajo `/`.
+- GitHub Pages o subcarpetas mediante `ASTRO_SITE` y `ASTRO_BASE`.
 
 ## Regla principal
 

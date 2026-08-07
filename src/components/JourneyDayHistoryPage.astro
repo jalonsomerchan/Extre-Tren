@@ -1,6 +1,7 @@
 ---
 import Button from './Button.astro';
 import Container from './Container.astro';
+import DelayDistribution from './DelayDistribution.astro';
 import JourneyStops from './JourneyStops.astro';
 import MetricCards from './MetricCards.astro';
 import ObservationTimeline from './ObservationTimeline.astro';
@@ -21,7 +22,7 @@ const { trainNumber, date, locale } = Astro.props;
 const t = useTranslations(locale);
 const record = getJourneyDay(trainNumber, date);
 const formattedDate = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
-  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  day: 'numeric', month: 'long', year: 'numeric',
 }).format(new Date(`${date}T12:00:00`));
 const title = `${t('journeyDay.title')} ${trainNumber} · ${formattedDate}`;
 const routeStops = record?.routeStops ?? [];
@@ -35,6 +36,7 @@ const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.l
       <>
         <div class="actions"><Button href={getLocalizedPath(`/viaje/${trainNumber}/`, locale)} variant="secondary">{t('journeyDay.fullHistory')}</Button></div>
         <MetricCards records={[record]} locale={locale} />
+        <DelayDistribution records={[record]} locale={locale} />
         {hasRouteMap && <RouteMap stops={routeStops} title={t('journey.map')} locale={locale} />}
         {routeStops.length > 0 && <JourneyStops stops={routeStops} title={t('journey.stops')} />}
         <ObservationTimeline observations={record.observations ?? []} locale={locale} />

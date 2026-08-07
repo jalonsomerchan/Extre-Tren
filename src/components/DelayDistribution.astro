@@ -1,0 +1,71 @@
+---
+import DelayLegend from './DelayLegend.astro';
+import type { Locale } from '../config/site';
+import type { DelayState, TrainRecord } from '../data/delays';
+import { getDelayState } from '../data/delays';
+import { useTranslations } from '../i18n/ui';
+
+interface Props { records: TrainRecord[]; locale: Locale; }
+
+const { records, locale } = Astro.props;
+const t = useTranslations(locale);
+const states = ['onTime', 'minor', 'major', 'severe'] as const;
+const counts = Object.fromEntries(states.map((state) => [state, 0])) as Record<(typeof states)[number], number>;
+
+records.forEach((record) => {
+  const state: DelayState = getDelayState(record);
+  if (state in counts) counts[state as keyof typeof counts] += 1;
+});
+
+const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+const percentage = (count: number) => total ? Math.round((count / total) * 100) : 0;
+---
+
+<section class="delay-distribution" aria-label={t('chart.distribution')}>
+  <div class="delay-distribution__heading">
+    <div>
+      <h2>{t('chart.distribution')}</h2>
+      <p>{t('chart.distributionDescription')}</p>
+    </div>
+    <strong>{total}</strong>
+  </div>
+  {total ? (
+    <>
+      <div class="delay-distribution__bar" aria-hidden="true">
+        {states.map((state) => <span class={`is-${state}`} style={`width: ${percentage(counts[state])}%`}></span>)}
+      </div>
+      <dl>
+        {states.map((state) => (
+          <div class={`is-${state}`}>
+            <dt>{t(`status.${state}`)}</dt>
+            <dd>{counts[state]} <span>({percentage(counts[state])}%)</span></dd>
+          </div>
+        ))}
+      </dl>
+      <DelayLegend locale={locale} compact />
+    </>
+  ) : <p class="delay-distribution__empty">{t('chart.noData')}</p>}
+</section>
+
+<style>
+  .delay-distribution { min-width: 0; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); }
+  .delay-distribution__heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-4); }
+  h2 { margin: 0; font-size: 1rem; letter-spacing: -0.025em; }
+  p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: 0.78rem; }
+  .delay-distribution__heading > strong { color: var(--color-text-soft); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .delay-distribution__bar { display: flex; height: 1.9rem; margin: var(--space-5) 0 var(--space-4); overflow: hidden; border-radius: var(--radius-sm); background: var(--color-surface-soft); }
+  .delay-distribution__bar span { min-width: 0; background: var(--delay-color); }
+  .delay-distribution__bar span + span { border-left: 2px solid var(--color-surface); }
+  dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin: 0 0 var(--space-5); }
+  dl div { padding-left: var(--space-3); border-left: 3px solid var(--delay-color); }
+  dt { color: var(--color-text-muted); font-size: 0.72rem; }
+  dd { margin: 0.15rem 0 0; color: var(--delay-color); font-size: 1.15rem; font-weight: 820; font-variant-numeric: tabular-nums; }
+  dd span { font-size: 0.72rem; font-weight: 700; }
+  .is-onTime { --delay-color: var(--color-delay-on-time); }
+  .is-minor { --delay-color: var(--color-delay-minor); }
+  .is-major { --delay-color: var(--color-delay-major); }
+  .is-severe { --delay-color: var(--color-delay-severe); }
+  .delay-distribution__empty { padding-block: var(--space-6); text-align: center; }
+
+  @media (min-width: 640px) { dl { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+</style>

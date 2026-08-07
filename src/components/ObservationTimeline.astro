@@ -1,0 +1,44 @@
+---
+import type { TrainObservation } from '../data/delays';
+import type { Locale } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  observations: TrainObservation[];
+  locale: Locale;
+}
+
+const { observations, locale } = Astro.props;
+const t = useTranslations(locale);
+const timeFormatter = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  timeZone: 'UTC',
+  timeZoneName: 'short',
+});
+const delayLabel = (delay: number | null) => delay === null ? t('status.unknown') : `${delay} ${t('common.minutes')}`;
+---
+
+<section class="observation-timeline" aria-labelledby="observation-timeline-title">
+  <h2 id="observation-timeline-title">{t('journeyDay.timeline')}</h2>
+  <p>{t('journeyDay.timelineDescription')}</p>
+  <ol>
+    {observations.map(([observedAt, delayMinutes]) => (
+      <li>
+        <time datetime={observedAt}>{timeFormatter.format(new Date(observedAt))}</time>
+        <strong>{delayLabel(delayMinutes)}</strong>
+      </li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  .observation-timeline { margin-top: var(--space-6); }
+  h2 { margin: 0; font-size: 1.05rem; letter-spacing: -0.02em; }
+  p { margin: var(--space-2) 0 var(--space-4); color: var(--color-text-muted); font-size: 0.9rem; }
+  ol { display: grid; gap: var(--space-2); max-height: 34rem; padding: 0; margin: 0; overflow: auto; list-style: none; }
+  li { display: grid; grid-template-columns: minmax(6.8rem, 1fr) auto; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 0.88rem; }
+  time { color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+  strong { font-variant-numeric: tabular-nums; }
+</style>

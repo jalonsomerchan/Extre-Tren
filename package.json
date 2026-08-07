@@ -1,5 +1,5 @@
 {
-  "name": "astro-template",
+  "name": "extre-tren",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -10,6 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "node --test tests/*.test.mjs",
+    "data:sync": "node scripts/update-extremadura-data.mjs",
+    "data:sync:all": "node scripts/update-extremadura-data.mjs --all",
     "format": "npx --yes prettier@latest --write \"**/*.{css,js,json,md,mjs,ts,yml,yaml}\"",
     "format:check": "npx --yes prettier@latest --check \"**/*.{css,js,json,md,mjs,ts,yml,yaml}\"",
     "clean": "node scripts/clean.mjs",
@@ -23,6 +25,7 @@
     "astro-icon": "^1.1.5",
     "astro-seo": "^1.1.0",
     "expressive-code": "^0.42.0",
+    "leaflet": "^1.9.4",
     "tailwindcss": "^4.3.0",
     "zod": "^4.4.3"
   }

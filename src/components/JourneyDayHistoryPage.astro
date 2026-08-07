@@ -1,0 +1,49 @@
+---
+import Button from './Button.astro';
+import Container from './Container.astro';
+import JourneyStops from './JourneyStops.astro';
+import MetricCards from './MetricCards.astro';
+import ObservationTimeline from './ObservationTimeline.astro';
+import PageHero from './PageHero.astro';
+import RouteMap from './RouteMap.astro';
+import type { Locale } from '../config/site';
+import { getJourneyDay } from '../data/delays';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Props {
+  trainNumber: string;
+  date: string;
+  locale: Locale;
+}
+
+const { trainNumber, date, locale } = Astro.props;
+const t = useTranslations(locale);
+const record = getJourneyDay(trainNumber, date);
+const formattedDate = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+}).format(new Date(`${date}T12:00:00`));
+const title = `${t('journeyDay.title')} ${trainNumber} · ${formattedDate}`;
+const routeStops = record?.routeStops ?? [];
+const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.longitude !== null).length >= 2;
+---
+
+<BaseLayout title={title} description={t('journeyDay.description')} locale={locale} currentSection="trains">
+  <Container>
+    <PageHero eyebrow={t('journeyDay.eyebrow')} title={title} description={t('journeyDay.description')} />
+    {record ? (
+      <>
+        <div class="actions"><Button href={getLocalizedPath(`/viaje/${trainNumber}/`, locale)} variant="secondary">{t('journeyDay.fullHistory')}</Button></div>
+        <MetricCards records={[record]} locale={locale} />
+        {hasRouteMap && <RouteMap stops={routeStops} title={t('journey.map')} locale={locale} />}
+        {routeStops.length > 0 && <JourneyStops stops={routeStops} title={t('journey.stops')} />}
+        <ObservationTimeline observations={record.observations ?? []} locale={locale} />
+      </>
+    ) : <p class="empty">{t('common.noData')}</p>}
+  </Container>
+</BaseLayout>
+
+<style>
+  .actions { margin-top: var(--space-5); }
+  .empty { margin-top: var(--space-6); color: var(--color-text-muted); }
+</style>

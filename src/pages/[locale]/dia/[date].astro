@@ -1,0 +1,16 @@
+---
+import DayDetailPage from '../../../components/DayDetailPage.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { getAvailableDays } from '../../../data/delays';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => getAvailableDays().map((day) => ({ params: { locale, date: day.date } })));
+}
+
+const locale = Astro.params.locale as Locale;
+const date = Astro.params.date!;
+---
+
+<DayDetailPage date={date} locale={locale} />

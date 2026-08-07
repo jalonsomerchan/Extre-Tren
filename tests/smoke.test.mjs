@@ -46,6 +46,18 @@ describe('project smoke checks', () => {
       'astro.config.mjs',
       'src/pages/index.astro',
       'src/pages/[locale]/index.astro',
+      'src/pages/[...section].astro',
+      'src/pages/[locale]/[...section].astro',
+      'src/pages/dia/[date].astro',
+      'src/pages/[locale]/dia/[date].astro',
+      'src/pages/semana/[period].astro',
+      'src/pages/mes/[period].astro',
+      'src/pages/[locale]/semana/[period].astro',
+      'src/pages/[locale]/mes/[period].astro',
+      'src/pages/viaje/[train].astro',
+      'src/pages/[locale]/viaje/[train].astro',
+      'src/pages/viaje/[train]/dia/[date].astro',
+      'src/pages/[locale]/viaje/[train]/dia/[date].astro',
       'src/pages/404.astro',
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
@@ -55,6 +67,8 @@ describe('project smoke checks', () => {
       'src/i18n/translations',
       'src/utils/paths.ts',
       'src/styles/global.css',
+      'src/data/renfe-extremadura.json',
+      'scripts/update-extremadura-data.mjs',
     ].forEach((path) => {
       assert.equal(existsSync(join(root, path)), true, `${path} should exist`);
     });
@@ -75,11 +89,12 @@ describe('project smoke checks', () => {
     assert.equal(pkg.scripts?.build, 'astro build');
     assert.equal(pkg.scripts?.preview, 'astro preview');
     assert.ok(pkg.scripts?.test?.includes('node --test'));
+    assert.equal(pkg.scripts?.['data:sync:all'], 'node scripts/update-extremadura-data.mjs --all');
     assert.ok(pkg.scripts?.clean?.includes('scripts/clean.mjs'));
   });
 
   it('keeps basic template components available', () => {
-    ['Button', 'Container', 'Footer', 'Header'].forEach((component) => {
+    ['Container', 'DataPage', 'DayDetailPage', 'DelayBadge', 'Footer', 'Header', 'JourneyDayHistoryPage', 'JourneyHistoryPage', 'JourneyStops', 'MetricCards', 'ObservationTimeline', 'PageHero', 'PeriodPicker', 'RouteMap', 'SummaryBars', 'TodayLiveTable', 'TrainTable'].forEach((component) => {
       assert.equal(
         existsSync(join(root, `src/components/${component}.astro`)),
         true,
@@ -134,7 +149,7 @@ describe('project smoke checks', () => {
         expectedKeys,
         `${locale}.json keys should match ${defaultLocale}.json`
       );
-      assert.ok(translations['home.title'], `${locale}.json should include home.title`);
+      assert.ok(translations['today.title'], `${locale}.json should include today.title`);
       assert.ok(translations['nav.main'], `${locale}.json should include nav.main`);
     });
   });
@@ -159,25 +174,25 @@ describe('project smoke checks', () => {
     assert.match(robots, /sitemap-index\.xml/);
   });
 
-  it('keeps starter links and labels configurable or translated', () => {
+  it('keeps ExtreTren metadata, sections and data sources configured', () => {
     const siteConfig = readText('src/config/site.ts');
     const header = readText('src/components/Header.astro');
-    const home = readText('src/pages/index.astro');
-    const localizedHome = readText('src/pages/[locale]/index.astro');
-    const envExample = readText('.env.example');
+    const dataPage = readText('src/components/DataPage.astro');
+    const dataScript = readText('scripts/update-extremadura-data.mjs');
 
     assert.match(siteConfig, /repositoryUrl/);
-    assert.match(envExample, /PUBLIC_REPOSITORY_URL/);
+    assert.match(siteConfig, /ExtreTren/);
     assert.match(header, /t\('nav\.main'\)/);
-    assert.match(home, /siteConfig\.repositoryUrl/);
-    assert.match(localizedHome, /siteConfig\.repositoryUrl/);
-    assert.doesNotMatch(home, /https:\/\/github\.com\/jalonsomerchan\/astro-template/);
-    assert.doesNotMatch(localizedHome, /https:\/\/github\.com\/jalonsomerchan\/astro-template/);
+    assert.match(dataPage, /section === 'today'/);
+    assert.match(dataScript, /EXTREMADURA_STOP_IDS/);
+    assert.match(dataScript, /josernalist\/renfe-gtfsrt/);
+    assert.match(dataScript, /getAllAvailableDates/);
   });
 
   it('includes GitHub workflows for CI and Pages', () => {
     const pagesWorkflow = readText('.github/workflows/pages.yml');
     const ciWorkflow = readText('.github/workflows/ci.yml');
+    const dataWorkflow = readText('.github/workflows/data-refresh.yml');
 
     assert.match(pagesWorkflow, /actions\/deploy-pages@v4/);
     assert.match(pagesWorkflow, /npm run build/);
@@ -185,6 +200,9 @@ describe('project smoke checks', () => {
     assert.match(ciWorkflow, /pull_request/);
     assert.match(ciWorkflow, /npm run build/);
     assert.match(ciWorkflow, /npm test/);
+    assert.match(dataWorkflow, /schedule/);
+    assert.match(dataWorkflow, /update-extremadura-data/);
+    assert.match(dataWorkflow, /actions\/deploy-pages@v4/);
   });
 
   it('keeps useful project documentation available', () => {
@@ -193,5 +211,6 @@ describe('project smoke checks', () => {
     assert.match(readme, /\S/, 'README.md should not be empty');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');
     assert.equal(existsSync(join(root, 'docs/design-system.md')), true, 'docs/design-system.md should exist');
+    assert.equal(existsSync(join(root, 'docs/data-pipeline.md')), true, 'docs/data-pipeline.md should exist');
   });
 });

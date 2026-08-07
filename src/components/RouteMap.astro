@@ -1,0 +1,98 @@
+---
+import type { Locale } from '../config/site';
+import type { RouteStop } from '../data/delays';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  stops: RouteStop[];
+  title: string;
+  locale: Locale;
+}
+
+const { stops, title, locale } = Astro.props;
+const t = useTranslations(locale);
+const locatedStops = stops
+  .filter((stop): stop is RouteStop & { latitude: number; longitude: number } => stop.latitude !== null && stop.longitude !== null)
+  .map(({ name, time, latitude, longitude }) => ({ name, time, latitude, longitude }));
+---
+
+<section class="route-map" aria-labelledby="route-map-title">
+  <h2 id="route-map-title">{title}</h2>
+  <div
+    class="leaflet-route-map"
+    data-route-map
+    data-stops={JSON.stringify(locatedStops)}
+    data-title={title}
+    data-zoom-in={t('map.zoomIn')}
+    data-zoom-out={t('map.zoomOut')}
+    role="region"
+    aria-label={title}
+  ></div>
+</section>
+
+<script>
+  // @ts-ignore Leaflet distributes JavaScript separately from its optional type package.
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+
+  const tileOptions = {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 20,
+    subdomains: 'abcd',
+  };
+  const tileUrl = (isDark: boolean) => isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const markerStyle = (index: number, total: number) => index === 0
+    ? { color: '#087443', fillColor: '#22a06b', radius: 8, weight: 3 }
+    : index === total - 1
+      ? { color: '#c83b3b', fillColor: '#ef6c6c', radius: 8, weight: 3 }
+      : { color: '#155eef', fillColor: '#86adff', radius: 5, weight: 2 };
+
+  document.querySelectorAll<HTMLElement>('[data-route-map]').forEach((element) => {
+    const stops = JSON.parse(element.dataset.stops ?? '[]') as Array<{ name: string; time: string; latitude: number; longitude: number }>;
+    if (stops.length < 2) return;
+
+    const map = L.map(element, { scrollWheelZoom: false, zoomControl: false, attributionControl: true });
+    L.control.zoom({
+      position: 'bottomright',
+      zoomInTitle: element.dataset.zoomIn,
+      zoomOutTitle: element.dataset.zoomOut,
+    }).addTo(map);
+    let tiles = L.tileLayer(tileUrl(document.documentElement.dataset.theme === 'dark'), tileOptions).addTo(map);
+    const route = stops.map((stop) => [stop.latitude, stop.longitude] as [number, number]);
+
+    L.polyline(route, { color: '#155eef', weight: 5, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+    stops.forEach((stop, index) => {
+      L.circleMarker([stop.latitude, stop.longitude], markerStyle(index, stops.length))
+        .addTo(map)
+        .bindTooltip(`${stop.name}${stop.time ? ` · ${stop.time}` : ''}`, { direction: 'top', offset: [0, -8] });
+    });
+    map.fitBounds(L.latLngBounds(route), { padding: [32, 32], maxZoom: 11 });
+    requestAnimationFrame(() => map.invalidateSize());
+
+    element.addEventListener('mouseenter', () => map.scrollWheelZoom.enable());
+    element.addEventListener('mouseleave', () => map.scrollWheelZoom.disable());
+    window.addEventListener('extretren:themechange', (event) => {
+      const isDark = (event as CustomEvent<string>).detail === 'dark';
+      map.removeLayer(tiles);
+      tiles = L.tileLayer(tileUrl(isDark), tileOptions).addTo(map);
+    });
+  });
+</script>
+
+<style>
+  .route-map { margin-top: var(--space-6); padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+  h2 { margin: 0 0 var(--space-4); font-size: 1.05rem; letter-spacing: -0.02em; }
+  .leaflet-route-map { height: clamp(19rem, 55vw, 30rem); overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-soft); }
+  .route-map :global(.leaflet-container) { font-family: var(--font-sans); }
+  .route-map :global(.leaflet-control-zoom a), .route-map :global(.leaflet-popup-content-wrapper), .route-map :global(.leaflet-popup-tip) { border-color: var(--color-border); background: var(--color-surface); color: var(--color-text); }
+  .route-map :global(.leaflet-control-zoom a:hover) { background: var(--color-primary-soft); color: var(--color-primary); }
+  .route-map :global(.leaflet-control-attribution) { background: color-mix(in srgb, var(--color-surface), transparent 10%); color: var(--color-text-muted); }
+  .route-map :global(.leaflet-control-attribution a) { color: var(--color-primary); }
+
+  @media (max-width: 479px) {
+    .route-map { padding: var(--space-4); }
+    .leaflet-route-map { height: 19rem; }
+  }
+</style>

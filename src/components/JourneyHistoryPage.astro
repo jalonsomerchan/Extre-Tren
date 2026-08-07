@@ -1,0 +1,50 @@
+---
+import Container from './Container.astro';
+import MetricCards from './MetricCards.astro';
+import PageHero from './PageHero.astro';
+import JourneyStops from './JourneyStops.astro';
+import RouteMap from './RouteMap.astro';
+import SummaryBars from './SummaryBars.astro';
+import TrainTable from './TrainTable.astro';
+import type { Locale } from '../config/site';
+import { getDisplayedDelay, getTrainHistory } from '../data/delays';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Props {
+  trainNumber: string;
+  locale: Locale;
+}
+
+const { trainNumber, locale } = Astro.props;
+const t = useTranslations(locale);
+const records = getTrainHistory(trainNumber);
+const dateFormatter = new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'short' });
+const items = records.map((record) => {
+  const delay = getDisplayedDelay(record);
+  return {
+    label: dateFormatter.format(new Date(`${record.date}T12:00:00`)),
+    value: delay ?? 0,
+    detail: delay === null ? '—' : `${delay} ${t('common.minutes')}`,
+    href: getLocalizedPath(`/viaje/${trainNumber}/dia/${record.date}/`, locale),
+  };
+});
+const title = `${t('journey.title')} ${trainNumber}`;
+const routeStops = records.at(-1)?.routeStops ?? [];
+const hasRouteMap = routeStops.filter((stop) => stop.latitude !== null && stop.longitude !== null).length >= 2;
+---
+
+<BaseLayout title={title} description={t('journey.description')} locale={locale} currentSection="trains">
+  <Container>
+    <PageHero eyebrow={t('journey.eyebrow')} title={title} description={t('journey.description')} />
+    <MetricCards records={records} locale={locale} />
+    <SummaryBars title={t('journey.chart')} items={items} />
+    {hasRouteMap && <RouteMap stops={routeStops} title={t('journey.map')} locale={locale} />}
+    {routeStops.length > 0 && <JourneyStops stops={routeStops} title={t('journey.stops')} />}
+    <div class="journey-table"><TrainTable records={records} locale={locale} /></div>
+  </Container>
+</BaseLayout>
+
+<style>
+  .journey-table { margin-top: var(--space-6); }
+</style>

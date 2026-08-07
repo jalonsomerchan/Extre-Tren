@@ -1,0 +1,102 @@
+---
+import Container from './Container.astro';
+import MetricCards from './MetricCards.astro';
+import PageHero from './PageHero.astro';
+import PeriodPicker from './PeriodPicker.astro';
+import SummaryBars from './SummaryBars.astro';
+import TodayLiveTable from './TodayLiveTable.astro';
+import TrainTable from './TrainTable.astro';
+import type { SectionId } from '../config/navigation';
+import type { Locale } from '../config/site';
+import { getAvailableMonths, getAvailableWeeks, getCurrentMonthDays, getDaySummary, getDaysForMonth, getDaysForWeek, getLatestDay, getRecentDays, getRouteSummary, getStationSummary } from '../data/delays';
+import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Props { section: SectionId; locale: Locale; period?: string; }
+
+const { section, locale, period } = Astro.props;
+const t = useTranslations(locale);
+const copy: Record<SectionId, { eyebrow: TranslationKey; title: TranslationKey; description: TranslationKey }> = {
+  today: { eyebrow: 'today.eyebrow', title: 'today.title', description: 'today.description' },
+  week: { eyebrow: 'week.eyebrow', title: 'week.title', description: 'week.description' },
+  month: { eyebrow: 'month.eyebrow', title: 'month.title', description: 'month.description' },
+  statistics: { eyebrow: 'statistics.eyebrow', title: 'statistics.title', description: 'statistics.description' },
+  trains: { eyebrow: 'trains.eyebrow', title: 'trains.title', description: 'trains.description' },
+  stations: { eyebrow: 'stations.eyebrow', title: 'stations.title', description: 'stations.description' },
+  methodology: { eyebrow: 'methodology.eyebrow', title: 'methodology.title', description: 'methodology.description' },
+};
+const latestDay = getLatestDay();
+const availableWeeks = getAvailableWeeks();
+const availableMonths = getAvailableMonths();
+const selectedWeek = availableWeeks.includes(period ?? '') ? period! : availableWeeks[0];
+const selectedMonth = availableMonths.includes(period ?? '') ? period! : availableMonths[0];
+const weeklyDays = selectedWeek ? getDaysForWeek(selectedWeek) : [];
+const monthDays = selectedMonth ? getDaysForMonth(selectedMonth) : getCurrentMonthDays();
+const selectedDays = section === 'week' ? weeklyDays : section === 'month' || section === 'stations' ? monthDays : section === 'statistics' ? getRecentDays(90) : latestDay ? [latestDay] : [];
+const records = selectedDays.flatMap((day) => day.records);
+const localeCode = locale === 'es' ? 'es-ES' : 'en-GB';
+const dateFormatter = new Intl.DateTimeFormat(localeCode, { day: 'numeric', month: 'short' });
+const dayLabel = (date: string) => dateFormatter.format(new Date(`${date}T12:00:00`));
+const monthFormatter = new Intl.DateTimeFormat(localeCode, { month: 'long', year: 'numeric' });
+const formatMonth = (month: string) => monthFormatter.format(new Date(`${month}-01T12:00:00`));
+const formatWeek = (week: string) => `${t('period.week')} ${Number(week.slice(-2))} · ${week.slice(0, 4)}`;
+const periodOptions = section === 'week'
+  ? availableWeeks.map((week) => ({ label: formatWeek(week), href: getLocalizedPath(`/semana/${week}/`, locale), selected: week === selectedWeek }))
+  : section === 'month'
+    ? availableMonths.map((month) => ({ label: formatMonth(month), href: getLocalizedPath(`/mes/${month}/`, locale), selected: month === selectedMonth }))
+    : [];
+const dailyBars = selectedDays.map((day) => {
+  const summary = getDaySummary(day.records);
+  return {
+    label: dayLabel(day.date),
+    value: summary.average ?? 0,
+    detail: summary.average === null ? '—' : `${summary.average} ${t('common.minutes')}`,
+    href: getLocalizedPath(`/dia/${day.date}/`, locale),
+  };
+});
+const routeBars = getRouteSummary(selectedDays).map((route) => ({ label: route.route, value: route.average, detail: `${route.average} ${t('common.minutes')}` }));
+const stationBars = getStationSummary(selectedDays).map((station) => ({ label: station.station, value: station.services, detail: `${station.services} ${t('common.trains')}` }));
+const sortedRecords = [...records].sort((left, right) => left.date.localeCompare(right.date) || left.observedAt.localeCompare(right.observedAt) || left.trainNumber.localeCompare(right.trainNumber));
+const details = [
+  ['methodology.static.title', 'methodology.static.text'],
+  ['methodology.history.title', 'methodology.history.text'],
+  ['methodology.filter.title', 'methodology.filter.text'],
+  ['methodology.live.title', 'methodology.live.text'],
+] as const;
+---
+
+<BaseLayout title={t(copy[section].title)} description={t(copy[section].description)} locale={locale} currentSection={section}>
+  <Container>
+    <PageHero eyebrow={t(copy[section].eyebrow)} title={t(copy[section].title)} description={t(copy[section].description)} />
+
+    {section === 'methodology' ? (
+      <section class="methodology-grid">
+        {details.map(([title, text]) => <article><h2>{t(title)}</h2><p>{t(text)}</p></article>)}
+      </section>
+    ) : !latestDay ? (
+      <p class="empty-state">{t('common.noData')}</p>
+    ) : (
+      <>
+        {section === 'week' && <PeriodPicker label={t('period.selectWeek')} options={periodOptions} />}
+        {section === 'month' && <PeriodPicker label={t('period.selectMonth')} options={periodOptions} />}
+        <MetricCards records={records} locale={locale} />
+        {section === 'today' && <TodayLiveTable day={latestDay} locale={locale} />}
+        {section === 'week' && <SummaryBars title={t('chart.daily')} items={dailyBars} />}
+        {section === 'month' && <SummaryBars title={t('chart.daily')} items={dailyBars} />}
+        {section === 'statistics' && <div class="analysis-grid"><SummaryBars title={t('chart.route')} items={routeBars} /><SummaryBars title={t('chart.daily')} items={dailyBars} /></div>}
+        {section === 'stations' && <SummaryBars title={t('chart.station')} items={stationBars} />}
+        {section === 'trains' && <TrainTable records={sortedRecords} locale={locale} />}
+      </>
+    )}
+  </Container>
+</BaseLayout>
+
+<style>
+  .empty-state { padding: var(--space-8); border: 1px dashed var(--color-border); border-radius: var(--radius-xl); color: var(--color-text-muted); text-align: center; }
+  .analysis-grid { display: grid; gap: var(--space-5); }
+  .methodology-grid { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
+  .methodology-grid article { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+  .methodology-grid h2 { margin: 0; font-size: 1.1rem; letter-spacing: -0.025em; }
+  .methodology-grid p { margin: var(--space-3) 0 0; color: var(--color-text-muted); line-height: 1.65; }
+  @media (min-width: 800px) { .analysis-grid, .methodology-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>

@@ -1,0 +1,86 @@
+---
+import type { TrainRecord } from '../data/delays';
+import { getDaySummary } from '../data/delays';
+import type { Locale } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  records: TrainRecord[];
+  locale: Locale;
+}
+
+const { records, locale } = Astro.props;
+const t = useTranslations(locale);
+const summary = getDaySummary(records);
+const minute = (value: number | null) => (value === null ? '—' : `${value} ${t('common.minutes')}`);
+---
+
+<dl class="metrics" aria-label={t('statistics.title')}>
+  <div>
+    <dt>{t('metrics.services')}</dt>
+    <dd>{summary.services}</dd>
+  </div>
+  <div>
+    <dt>{t('metrics.punctual')}</dt>
+    <dd>{summary.punctual}</dd>
+  </div>
+  <div>
+    <dt>{t('metrics.average')}</dt>
+    <dd>{minute(summary.average)}</dd>
+  </div>
+  <div>
+    <dt>{t('metrics.worst')}</dt>
+    <dd>{minute(summary.worst)}</dd>
+  </div>
+  <div>
+    <dt>{t('metrics.cancelled')}</dt>
+    <dd>{summary.cancelled}</dd>
+  </div>
+</dl>
+
+<style>
+  .metrics {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: var(--space-6) 0;
+  }
+
+  .metrics div {
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .metrics div:last-child {
+    grid-column: span 2;
+  }
+
+  dt {
+    color: var(--color-text-soft);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: var(--space-2) 0 0;
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  @media (min-width: 640px) {
+    .metrics {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .metrics div:last-child {
+      grid-column: auto;
+    }
+  }
+</style>

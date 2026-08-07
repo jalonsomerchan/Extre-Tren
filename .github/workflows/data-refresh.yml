@@ -1,0 +1,74 @@
+name: Refresh Extremadura rail data
+
+on:
+  schedule:
+    - cron: '20 01 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Fecha a importar (YYYY-MM-DD). Por defecto, ayer en UTC.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  refresh:
+    name: Import previous day
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Update reduced dataset
+        run: node scripts/update-extremadura-data.mjs ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+
+      - name: Commit refreshed data
+        id: commit
+        run: |
+          if git diff --quiet -- src/data/renfe-extremadura.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/renfe-extremadura.json
+          git commit -m "data: refresh Extremadura rail delays"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        if: steps.commit.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Run tests
+        if: steps.commit.outputs.changed == 'true'
+        run: npm test
+
+      - name: Configure Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Build site
+        if: steps.commit.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Upload Pages artifact
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy Pages
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,13 @@
+---
+import DataPage from '../../components/DataPage.astro';
+import { defaultLocale } from '../../config/site';
+import { getAvailableWeeks } from '../../data/delays';
+
+export function getStaticPaths() {
+  return getAvailableWeeks().map((period) => ({ params: { period } }));
+}
+
+const period = Astro.params.period!;
+---
+
+<DataPage section="week" locale={defaultLocale} period={period} />

@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { defaultLocale, siteConfig, type Locale } from '../config/site';
+import type { SectionId } from '../config/navigation';
 import { useTranslations } from '../i18n/ui';
 import { getAbsoluteUrl, stripBasePath, withBasePath } from '../utils/paths';
 
@@ -11,12 +12,14 @@ interface Props {
   description?: string;
   image?: string;
   locale?: Locale;
+  currentSection?: SectionId;
 }
 
 const {
   title = siteConfig.name,
   image = 'og-image.svg',
   locale = defaultLocale,
+  currentSection,
 } = Astro.props;
 
 const t = useTranslations(locale);
@@ -52,8 +55,9 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
     <meta name="twitter:image" content={imageUrl} />
   </head>
   <body>
-    <Header locale={locale} />
-    <main>
+    <a class="skip-link" href="#main">{t('common.skipContent')}</a>
+    <Header locale={locale} currentSection={currentSection} />
+    <main id="main">
       <slot />
     </main>
     <Footer locale={locale} />

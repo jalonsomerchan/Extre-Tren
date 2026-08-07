@@ -1,0 +1,13 @@
+---
+import DayDetailPage from '../../components/DayDetailPage.astro';
+import { defaultLocale } from '../../config/site';
+import { getAvailableDays } from '../../data/delays';
+
+export function getStaticPaths() {
+  return getAvailableDays().map((day) => ({ params: { date: day.date } }));
+}
+
+const date = Astro.params.date!;
+---
+
+<DayDetailPage date={date} locale={defaultLocale} />

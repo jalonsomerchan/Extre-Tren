@@ -1,0 +1,15 @@
+---
+import DataPage from '../components/DataPage.astro';
+import { sections, type SectionId } from '../config/navigation';
+import { defaultLocale } from '../config/site';
+
+export function getStaticPaths() {
+  return sections
+    .filter((section) => section.id !== 'today')
+    .map((section) => ({ params: { section: section.path.replace(/^\/+|\/+$/g, '') }, props: { sectionId: section.id } }));
+}
+
+const section = Astro.props.sectionId as SectionId;
+---
+
+<DataPage section={section} locale={defaultLocale} />

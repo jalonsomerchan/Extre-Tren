@@ -1,18 +1,30 @@
 ---
 import Container from './Container.astro';
 import { siteConfig, type Locale } from '../config/site';
-import { useTranslations } from '../i18n/ui';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
 
-interface Props {
-  locale: Locale;
-}
+interface Props { locale: Locale; }
 
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 ---
 
-<footer class="border-t border-[var(--color-border)]">
-  <Container class="py-6 text-sm text-[var(--color-muted)]">
-    <p>© {new Date().getFullYear()} {siteConfig.name}. {t('footer.createdWith')}</p>
+<footer class="site-footer">
+  <Container class="site-footer__inner">
+    <div><strong>{siteConfig.name}</strong><p>{t('footer.description')}</p></div>
+    <nav aria-label={t('nav.main')}>
+      <a href={getLocalizedPath('/metodologia/', locale)}>{t('footer.source')}</a>
+      <a href={siteConfig.repositoryUrl}>{t('footer.repository')}</a>
+    </nav>
   </Container>
 </footer>
+
+<style>
+  .site-footer { margin-top: var(--space-16); border-top: 1px solid var(--color-border); }
+  .site-footer__inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-5); padding-block: var(--space-8); color: var(--color-text-muted); font-size: 0.86rem; }
+  strong { color: var(--color-text); }
+  p { max-width: 32rem; margin: var(--space-2) 0 0; }
+  nav { display: flex; flex-wrap: wrap; align-content: start; gap: var(--space-4); }
+  a { color: var(--color-text-muted); text-decoration: none; }
+  a:hover { color: var(--color-primary); text-decoration: underline; }
+</style>

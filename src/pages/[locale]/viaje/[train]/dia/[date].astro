@@ -1,0 +1,17 @@
+---
+import JourneyDayHistoryPage from '../../../../../components/JourneyDayHistoryPage.astro';
+import { defaultLocale, locales, type Locale } from '../../../../../config/site';
+import { getAvailableJourneyDays } from '../../../../../data/delays';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => getAvailableJourneyDays().map(({ trainNumber, date }) => ({
+      params: { locale, train: trainNumber, date },
+    })));
+}
+
+const { locale, train, date } = Astro.params;
+---
+
+<JourneyDayHistoryPage trainNumber={train!} date={date!} locale={locale as Locale} />

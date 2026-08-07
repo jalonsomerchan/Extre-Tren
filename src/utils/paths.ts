@@ -12,7 +12,17 @@ export function getBasePath() {
 }
 
 export function withBasePath(path: string, basePath = getBasePath()) {
-  return joinPathSegments(basePath, path);
+  const normalizedBase = joinPathSegments(basePath);
+  const cleanPath = path.replace(/^\/+|\/+$/g, '');
+
+  if (!cleanPath) {
+    return normalizedBase;
+  }
+
+  const baseWithoutTrailingSlash = normalizedBase === '/' ? '' : normalizedBase.slice(0, -1);
+  const trailingSlash = path.endsWith('/') ? '/' : '';
+
+  return `${baseWithoutTrailingSlash}/${cleanPath}${trailingSlash}`;
 }
 
 export function stripBasePath(pathname: string, basePath = getBasePath()) {

@@ -1,0 +1,43 @@
+---
+import type { TrainRecord } from '../data/delays';
+import { getDelayState, getDisplayedDelay } from '../data/delays';
+import type { Locale } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+
+interface Props {
+  record: TrainRecord;
+  locale: Locale;
+}
+
+const { record, locale } = Astro.props;
+const t = useTranslations(locale);
+const state = getDelayState(record);
+const displayedDelay = getDisplayedDelay(record);
+const delay = displayedDelay === null ? '' : `${displayedDelay} ${t('common.minutes')}`;
+const label = state === 'onTime' ? t('status.onTime') : state === 'unknown' ? t('status.unknown') : t(`status.${state}`);
+---
+
+<span class:list={['delay-badge', `delay-badge--${state}`]} title={label}>
+  {state === 'cancelled' || state === 'unknown' || state === 'onTime' ? label : `${delay} · ${label}`}
+</span>
+
+<style>
+  .delay-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.9rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .delay-badge--onTime { background: var(--color-success-soft); color: var(--color-success); }
+  .delay-badge--minor { background: var(--color-warning-soft); color: var(--color-warning); }
+  .delay-badge--major, .delay-badge--severe { background: var(--color-danger-soft); color: var(--color-danger); }
+  .delay-badge--suspended { background: var(--color-warning-soft); color: var(--color-warning); }
+  .delay-badge--cancelled { background: var(--color-text); color: var(--color-surface); }
+  .delay-badge--unknown { background: var(--color-surface-soft); color: var(--color-text-muted); }
+</style>

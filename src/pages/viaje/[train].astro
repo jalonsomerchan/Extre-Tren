@@ -1,0 +1,13 @@
+---
+import JourneyHistoryPage from '../../components/JourneyHistoryPage.astro';
+import { defaultLocale } from '../../config/site';
+import { getAvailableTrainNumbers } from '../../data/delays';
+
+export function getStaticPaths() {
+  return getAvailableTrainNumbers().map((train) => ({ params: { train } }));
+}
+
+const trainNumber = Astro.params.train!;
+---
+
+<JourneyHistoryPage trainNumber={trainNumber} locale={defaultLocale} />

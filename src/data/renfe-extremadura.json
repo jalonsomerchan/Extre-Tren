@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-28T07:00:05.490Z",
+  "updatedAt": "2026-09-29T06:58:54.365Z",
   "source": {
     "gtfs": "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip",
     "history": "https://github.com/josernalist/renfe-gtfsrt"
@@ -775036,6 +775036,136 @@
       "date": "2026-09-27",
       "sourceUrl": "https://raw.githubusercontent.com/josernalist/renfe-gtfsrt/master/data/2026/09/gtfsrt-2026-09-27.csv",
       "records": []
+    },
+    {
+      "date": "2026-09-28",
+      "sourceUrl": "https://raw.githubusercontent.com/josernalist/renfe-gtfsrt/master/data/2026/09/gtfsrt-2026-09-28.csv",
+      "records": [
+        {
+          "tripId": "1782312026-09-28",
+          "trainNumber": "17823",
+          "date": "2026-09-28",
+          "status": "SCHEDULED",
+          "maxDelayMinutes": 20,
+          "lastDelayMinutes": 20,
+          "observedAt": "2026-09-28T20:12:07Z",
+          "samples": 14,
+          "observations": [
+            [
+              "2026-09-28T19:06:56Z",
+              0
+            ],
+            [
+              "2026-09-28T19:12:14Z",
+              0
+            ],
+            [
+              "2026-09-28T19:17:51Z",
+              0
+            ],
+            [
+              "2026-09-28T19:21:52Z",
+              6
+            ],
+            [
+              "2026-09-28T19:26:52Z",
+              6
+            ],
+            [
+              "2026-09-28T19:32:22Z",
+              7
+            ],
+            [
+              "2026-09-28T19:37:04Z",
+              7
+            ],
+            [
+              "2026-09-28T19:41:48Z",
+              14
+            ],
+            [
+              "2026-09-28T19:46:51Z",
+              14
+            ],
+            [
+              "2026-09-28T19:52:14Z",
+              14
+            ],
+            [
+              "2026-09-28T19:56:46Z",
+              20
+            ],
+            [
+              "2026-09-28T20:02:41Z",
+              20
+            ],
+            [
+              "2026-09-28T20:07:08Z",
+              20
+            ],
+            [
+              "2026-09-28T20:12:07Z",
+              20
+            ]
+          ],
+          "origin": "Mérida",
+          "destination": "Zafra",
+          "departure": "21:00:00",
+          "routeStops": [
+            {
+              "name": "Mérida",
+              "time": "21:00:00",
+              "latitude": 38.921503,
+              "longitude": -6.343794
+            },
+            {
+              "name": "Calamonte",
+              "time": "21:10:00",
+              "latitude": 38.886931,
+              "longitude": -6.382965
+            },
+            {
+              "name": "Almendralejo",
+              "time": "21:24:00",
+              "latitude": 38.684662,
+              "longitude": -6.399815
+            },
+            {
+              "name": "Villafranca de los Barros",
+              "time": "21:33:00",
+              "latitude": 38.564402,
+              "longitude": -6.352048
+            },
+            {
+              "name": "Los Santos de Maimona",
+              "time": "21:42:00",
+              "latitude": 38.449724,
+              "longitude": -6.361749
+            },
+            {
+              "name": "Zafra Feria",
+              "time": "21:49:00",
+              "latitude": 38.424403,
+              "longitude": -6.410084
+            },
+            {
+              "name": "Zafra",
+              "time": "21:53:00",
+              "latitude": 38.413635,
+              "longitude": -6.405083
+            }
+          ],
+          "extremaduraStops": [
+            "Mérida",
+            "Calamonte",
+            "Almendralejo",
+            "Villafranca de los Barros",
+            "Los Santos de Maimona",
+            "Zafra Feria",
+            "Zafra"
+          ]
+        }
+      ]
     }
   ]
 }

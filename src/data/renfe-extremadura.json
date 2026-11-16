@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-15T07:54:03.283Z",
+  "updatedAt": "2026-11-16T08:01:49.159Z",
   "source": {
     "gtfs": "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip",
     "history": "https://github.com/josernalist/renfe-gtfsrt"
@@ -915465,6 +915465,11 @@
           ]
         }
       ]
+    },
+    {
+      "date": "2026-11-15",
+      "sourceUrl": "https://raw.githubusercontent.com/josernalist/renfe-gtfsrt/master/data/2026/11/gtfsrt-2026-11-15.csv",
+      "records": []
     }
   ]
 }
